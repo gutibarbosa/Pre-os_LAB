@@ -1,0 +1,7 @@
+# Dados brutos
+*.xlsx
+*.csv
+
+# Sistema
+.DS_Store
+Thumbs.db

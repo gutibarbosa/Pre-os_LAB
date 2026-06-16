@@ -1,0 +1,549 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Dashboard · Comparação de Preços por Substância</title>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+<style>
+  :root {
+    --bg: #0d1117;
+    --surface: #161b22;
+    --surface2: #1c2230;
+    --border: #2a3344;
+    --accent: #00c9a7;
+    --accent2: #7b61ff;
+    --danger: #ff4d6d;
+    --warn: #ffb703;
+    --text: #e6edf3;
+    --muted: #8b949e;
+    --radius: 10px;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { background: var(--bg); color: var(--text); font-family: 'Segoe UI', system-ui, sans-serif; min-height: 100vh; }
+
+  header { background: var(--surface); border-bottom: 1px solid var(--border); padding: 16px 32px; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 12px; }
+  .header-left { display: flex; align-items: center; gap: 16px; }
+  .logo-pill { background: var(--accent); color: #000; font-weight: 800; font-size: 11px; letter-spacing: 1.5px; padding: 4px 10px; border-radius: 20px; white-space: nowrap; }
+  header h1 { font-size: 16px; font-weight: 600; color: var(--text); }
+  header .subtitle { font-size: 12px; color: var(--muted); margin-top: 2px; }
+
+  /* UPLOAD BUTTON */
+  .upload-btn {
+    display: flex; align-items: center; gap: 8px;
+    background: var(--surface2); border: 1px solid var(--border);
+    border-radius: 8px; padding: 8px 16px; cursor: pointer;
+    font-size: 13px; color: var(--text); transition: all 0.15s;
+    white-space: nowrap;
+  }
+  .upload-btn:hover { border-color: var(--accent); color: var(--accent); }
+  .upload-btn input { display: none; }
+  .file-status { font-size: 12px; color: var(--muted); margin-top: 2px; }
+  .file-status.loaded { color: var(--accent); }
+
+  main { padding: 28px 32px; max-width: 1400px; margin: 0 auto; }
+
+  /* UPLOAD AREA (initial state) */
+  #uploadArea {
+    border: 2px dashed var(--border); border-radius: var(--radius);
+    padding: 64px 40px; text-align: center; cursor: pointer;
+    transition: all 0.2s; margin-bottom: 24px;
+  }
+  #uploadArea:hover, #uploadArea.drag { border-color: var(--accent); background: rgba(0,201,167,0.04); }
+  #uploadArea .upload-icon { font-size: 48px; margin-bottom: 16px; }
+  #uploadArea h2 { font-size: 18px; color: var(--text); margin-bottom: 8px; }
+  #uploadArea p { font-size: 14px; color: var(--muted); margin-bottom: 20px; }
+  #uploadArea input { display: none; }
+  .btn-primary {
+    display: inline-block; background: var(--accent); color: #000;
+    font-weight: 700; font-size: 13px; padding: 10px 24px;
+    border-radius: 8px; cursor: pointer; border: none; transition: opacity 0.15s;
+  }
+  .btn-primary:hover { opacity: 0.85; }
+  .upload-hint { font-size: 12px; color: var(--muted); margin-top: 12px; }
+
+  /* FILTER */
+  .filter-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 20px 24px; margin-bottom: 24px; }
+  .filter-label { font-size: 11px; font-weight: 700; letter-spacing: 1px; color: var(--accent); text-transform: uppercase; margin-bottom: 10px; }
+  .search-wrap { position: relative; flex: 1; min-width: 280px; }
+  .search-icon { position: absolute; left: 14px; top: 50%; transform: translateY(-50%); color: var(--muted); font-size: 16px; pointer-events: none; }
+  #substanciaInput { width: 100%; background: var(--bg); border: 1px solid var(--border); border-radius: 8px; color: var(--text); font-size: 14px; padding: 11px 14px 11px 42px; outline: none; transition: border-color 0.15s; }
+  #substanciaInput:focus { border-color: var(--accent); }
+  #substanciaInput::placeholder { color: var(--muted); }
+  #substanciaInput:disabled { opacity: 0.4; cursor: not-allowed; }
+  #dropdown { display: none; position: absolute; top: calc(100% + 6px); left: 0; right: 0; background: var(--surface2); border: 1px solid var(--border); border-radius: 8px; max-height: 260px; overflow-y: auto; z-index: 100; box-shadow: 0 8px 24px rgba(0,0,0,0.5); }
+  #dropdown.open { display: block; }
+  .drop-item { padding: 10px 16px; font-size: 13px; cursor: pointer; border-bottom: 1px solid var(--border); line-height: 1.4; }
+  .drop-item:last-child { border-bottom: none; }
+  .drop-item:hover { background: var(--border); color: var(--accent); }
+  .drop-item mark { background: transparent; color: var(--accent); font-weight: 700; }
+  .chip-row { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 14px; }
+  .chip { background: var(--surface2); border: 1px solid var(--border); border-radius: 20px; padding: 4px 14px; font-size: 12px; color: var(--muted); cursor: pointer; transition: all 0.15s; user-select: none; }
+  .chip:hover, .chip.active { background: var(--accent); color: #000; border-color: var(--accent); font-weight: 600; }
+
+  /* KPIs */
+  .kpi-row { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 16px; margin-bottom: 24px; }
+  .kpi { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 18px 20px; }
+  .kpi-label { font-size: 11px; font-weight: 700; letter-spacing: 1px; color: var(--muted); text-transform: uppercase; margin-bottom: 8px; }
+  .kpi-value { font-size: 26px; font-weight: 800; color: var(--text); line-height: 1; }
+  .kpi-sub { font-size: 12px; color: var(--muted); margin-top: 4px; }
+  .kpi.highlight { border-color: var(--accent); }
+  .kpi.highlight .kpi-value { color: var(--accent); }
+  .kpi.danger { border-color: var(--danger); }
+  .kpi.danger .kpi-value { color: var(--danger); }
+
+  /* WINNER */
+  #winnerBanner { display: none; background: linear-gradient(135deg, rgba(0,201,167,0.12), rgba(0,201,167,0.04)); border: 1px solid var(--accent); border-radius: var(--radius); padding: 16px 22px; margin-bottom: 24px; align-items: center; gap: 16px; flex-wrap: wrap; }
+  .winner-badge { background: var(--accent); color: #000; font-weight: 800; font-size: 11px; letter-spacing: 1px; padding: 4px 12px; border-radius: 20px; white-space: nowrap; }
+  .winner-info { flex: 1; min-width: 200px; }
+  .winner-name { font-size: 15px; font-weight: 700; color: var(--text); }
+  .winner-detail { font-size: 12px; color: var(--muted); margin-top: 2px; }
+  .winner-price { font-size: 28px; font-weight: 900; color: var(--accent); white-space: nowrap; }
+
+  /* CONTENT */
+  .content-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+  @media (max-width: 900px) { .content-grid { grid-template-columns: 1fr; } }
+  .panel { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); overflow: hidden; }
+  .panel-header { display: flex; align-items: center; justify-content: space-between; padding: 14px 20px; border-bottom: 1px solid var(--border); font-size: 13px; font-weight: 700; color: var(--text); }
+  .panel-count { background: var(--border); color: var(--muted); font-size: 11px; font-weight: 600; padding: 2px 9px; border-radius: 10px; }
+  .table-wrap { overflow-x: auto; max-height: 480px; overflow-y: auto; }
+  table { width: 100%; border-collapse: collapse; font-size: 13px; }
+  thead th { background: var(--surface2); color: var(--muted); font-size: 11px; font-weight: 700; letter-spacing: 0.5px; text-transform: uppercase; padding: 10px 14px; text-align: left; position: sticky; top: 0; z-index: 2; white-space: nowrap; cursor: pointer; user-select: none; }
+  thead th:hover { color: var(--accent); }
+  thead th .sort-arrow { margin-left: 4px; opacity: 0.4; }
+  thead th.sorted .sort-arrow { opacity: 1; color: var(--accent); }
+  tbody tr { border-bottom: 1px solid rgba(42,51,68,0.5); transition: background 0.1s; }
+  tbody tr:hover { background: var(--surface2); }
+  tbody tr.cheapest { background: rgba(0,201,167,0.06); }
+  tbody tr.cheapest td:first-child { border-left: 3px solid var(--accent); }
+  tbody td { padding: 10px 14px; vertical-align: middle; }
+  .td-lab { font-weight: 600; color: var(--text); }
+  .td-produto, .td-apres { color: var(--muted); font-size: 12px; }
+  .badge-tipo { display: inline-block; padding: 2px 8px; border-radius: 4px; font-size: 10px; font-weight: 700; letter-spacing: 0.5px; text-transform: uppercase; }
+  .tipo-GENÉRICO { background: rgba(123,97,255,0.2); color: #a78bfa; }
+  .tipo-SIMILAR { background: rgba(0,201,167,0.15); color: var(--accent); }
+  .tipo-NOVO { background: rgba(255,77,109,0.15); color: var(--danger); }
+  .tipo-BIOLÓGICO { background: rgba(255,183,3,0.15); color: var(--warn); }
+  .tipo-default { background: rgba(139,148,158,0.15); color: var(--muted); }
+  .td-price { font-weight: 700; font-size: 14px; white-space: nowrap; text-align: right; }
+  .td-price.price-min { color: var(--accent); }
+  .price-star { margin-left: 4px; font-size: 12px; }
+  .chart-wrap { padding: 20px; position: relative; }
+
+  #emptyState { text-align: center; padding: 60px 40px; color: var(--muted); }
+  #emptyState .big-icon { font-size: 40px; margin-bottom: 12px; }
+  #emptyState h2 { font-size: 16px; color: var(--text); margin-bottom: 6px; }
+  #emptyState p { font-size: 13px; }
+
+  /* TOAST */
+  #toast { position: fixed; bottom: 28px; left: 50%; transform: translateX(-50%) translateY(80px); background: var(--surface2); border: 1px solid var(--border); border-radius: 8px; padding: 12px 22px; font-size: 13px; color: var(--text); z-index: 9999; transition: transform 0.3s; white-space: nowrap; box-shadow: 0 8px 24px rgba(0,0,0,0.5); }
+  #toast.show { transform: translateX(-50%) translateY(0); }
+  #toast.success { border-color: var(--accent); color: var(--accent); }
+  #toast.error { border-color: var(--danger); color: var(--danger); }
+
+  ::-webkit-scrollbar { width: 6px; height: 6px; }
+  ::-webkit-scrollbar-track { background: var(--surface); }
+  ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+</style>
+</head>
+<body>
+
+<div id="toast"></div>
+
+<header>
+  <div class="header-left">
+    <div class="logo-pill">FARMÁCIA</div>
+    <div>
+      <h1>Comparação de Preços por Substância</h1>
+      <div class="subtitle" id="headerSubtitle">Carregue a planilha para começar</div>
+    </div>
+  </div>
+  <label class="upload-btn" id="headerUploadBtn" title="Carregar nova planilha">
+    📂 Carregar planilha
+    <input type="file" id="fileInputHeader" accept=".xlsx,.xls">
+  </label>
+</header>
+
+<main>
+  <!-- UPLOAD AREA (estado inicial) -->
+  <div id="uploadArea">
+    <div class="upload-icon">📊</div>
+    <h2>Nenhuma planilha carregada</h2>
+    <p>Arraste o arquivo aqui ou clique para selecionar</p>
+    <label class="btn-primary">
+      Selecionar arquivo .xlsx
+      <input type="file" id="fileInputMain" accept=".xlsx,.xls">
+    </label>
+    <p class="upload-hint">Compatível com a planilha BASE_DADOS.xlsx · aba "FILTRADO DASH"</p>
+  </div>
+
+  <!-- FILTER (oculto até ter dados) -->
+  <div class="filter-card" id="filterCard" style="display:none">
+    <div class="filter-label">🔍 Filtrar por Substância Ativa</div>
+    <div class="search-wrap">
+      <span class="search-icon">⌕</span>
+      <input type="text" id="substanciaInput" placeholder="Digite o nome da substância…" autocomplete="off" disabled>
+      <div id="dropdown"></div>
+    </div>
+    <div class="chip-row" id="chipRow">
+      <div class="chip active" data-tipo="">Todos os tipos</div>
+      <div class="chip" data-tipo="GENÉRICO">Genérico</div>
+      <div class="chip" data-tipo="SIMILAR">Similar</div>
+      <div class="chip" data-tipo="NOVO">Novo</div>
+      <div class="chip" data-tipo="BIOLÓGICO">Biológico</div>
+    </div>
+  </div>
+
+  <!-- KPIs -->
+  <div class="kpi-row" id="kpiRow" style="display:none">
+    <div class="kpi"><div class="kpi-label">Produtos encontrados</div><div class="kpi-value" id="kpiTotal">—</div><div class="kpi-sub" id="kpiSubTotal"></div></div>
+    <div class="kpi"><div class="kpi-label">Laboratórios</div><div class="kpi-value" id="kpiLabs">—</div></div>
+    <div class="kpi highlight"><div class="kpi-label">Menor preço</div><div class="kpi-value" id="kpiMin">—</div><div class="kpi-sub" id="kpiMinSub"></div></div>
+    <div class="kpi danger"><div class="kpi-label">Maior preço</div><div class="kpi-value" id="kpiMax">—</div><div class="kpi-sub" id="kpiMaxSub"></div></div>
+    <div class="kpi"><div class="kpi-label">Preço médio</div><div class="kpi-value" id="kpiAvg">—</div></div>
+  </div>
+
+  <!-- WINNER -->
+  <div id="winnerBanner">
+    <span class="winner-badge">🏆 MAIS BARATO</span>
+    <div class="winner-info">
+      <div class="winner-name" id="winnerName">—</div>
+      <div class="winner-detail" id="winnerDetail">—</div>
+    </div>
+    <div class="winner-price" id="winnerPrice">—</div>
+  </div>
+
+  <!-- EMPTY STATE (após carregar, antes de selecionar substância) -->
+  <div id="emptyState" style="display:none">
+    <div class="big-icon">💊</div>
+    <h2>Nenhuma substância selecionada</h2>
+    <p>Use o campo acima para buscar e selecionar uma substância ativa.</p>
+  </div>
+
+  <!-- CONTENT -->
+  <div class="content-grid" id="contentGrid" style="display:none">
+    <div class="panel">
+      <div class="panel-header">Tabela Comparativa <span class="panel-count" id="tableCount">0 itens</span></div>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th onclick="sortTable('LABORATORIO')" id="th-LABORATORIO">Laboratório <span class="sort-arrow">↕</span></th>
+              <th onclick="sortTable('PRODUTO')" id="th-PRODUTO">Produto <span class="sort-arrow">↕</span></th>
+              <th onclick="sortTable('APRESENTACAO')" id="th-APRESENTACAO">Apresentação <span class="sort-arrow">↕</span></th>
+              <th onclick="sortTable('TIPO_PRODUTO')" id="th-TIPO_PRODUTO">Tipo <span class="sort-arrow">↕</span></th>
+              <th onclick="sortTable('PRECO')" id="th-PRECO">Preço <span class="sort-arrow">↕</span></th>
+            </tr>
+          </thead>
+          <tbody id="tableBody"></tbody>
+        </table>
+      </div>
+    </div>
+    <div class="panel">
+      <div class="panel-header">Gráfico de Preços <span class="panel-count" id="chartCount">por produto</span></div>
+      <div class="chart-wrap"><canvas id="barChart"></canvas></div>
+    </div>
+  </div>
+</main>
+
+<script>
+let substanceMap = {};
+let allSubstances = [];
+let currentSubstance = null;
+let currentTipo = '';
+let sortKey = 'PRECO';
+let sortDir = 1;
+let chartInstance = null;
+
+// --- TOAST ---
+function showToast(msg, type = '') {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.className = 'show ' + type;
+  clearTimeout(t._timer);
+  t._timer = setTimeout(() => t.className = '', 3000);
+}
+
+// --- FILE READING ---
+function handleFile(file) {
+  if (!file) return;
+  if (!file.name.match(/\.xlsx?$/i)) {
+    showToast('❌ Formato inválido. Use um arquivo .xlsx', 'error');
+    return;
+  }
+  showToast('⏳ Lendo planilha…');
+  const reader = new FileReader();
+  reader.onload = e => {
+    try {
+      const wb = XLSX.read(e.target.result, { type: 'array' });
+
+      // Tenta achar a aba "FILTRADO DASH", senão usa a primeira
+      const sheetName = wb.SheetNames.includes('FILTRADO DASH')
+        ? 'FILTRADO DASH'
+        : wb.SheetNames[0];
+
+      const ws = wb.Sheets[sheetName];
+      const raw = XLSX.utils.sheet_to_json(ws, { defval: '' });
+
+      if (!raw.length) {
+        showToast('❌ Planilha vazia ou sem dados reconhecíveis.', 'error');
+        return;
+      }
+
+      // Mapeia colunas flexivelmente (aceita variações de acento/maiúscula)
+      const colMap = buildColMap(Object.keys(raw[0]));
+      const records = raw.map(row => ({
+        SUBSTANCIA:   String(row[colMap.SUBSTANCIA]  || '').trim(),
+        LABORATORIO:  String(row[colMap.LABORATORIO] || '').trim(),
+        EAN1:         String(row[colMap.EAN1]        || '').trim(),
+        PRODUTO:      String(row[colMap.PRODUTO]     || '').trim(),
+        APRESENTACAO: String(row[colMap.APRESENTACAO]|| '').trim(),
+        TIPO_PRODUTO: String(row[colMap.TIPO_PRODUTO]|| '').trim(),
+        REGIME_PRECO: String(row[colMap.REGIME_PRECO]|| '').trim(),
+        PRECO:        row[colMap.PRECO],
+      })).filter(r => r.SUBSTANCIA);
+
+      loadData(records, file.name, sheetName);
+    } catch(err) {
+      showToast('❌ Erro ao ler o arquivo: ' + err.message, 'error');
+    }
+  };
+  reader.readAsArrayBuffer(file);
+}
+
+function normalize(s) {
+  return String(s).toUpperCase()
+    .normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+    .replace(/[^A-Z0-9]/g, '');
+}
+
+function buildColMap(keys) {
+  const targets = {
+    SUBSTANCIA:   ['SUBSTANCIA','SUBSTÂNCIA'],
+    LABORATORIO:  ['LABORATORIO','LABORATÓRIO'],
+    EAN1:         ['EAN1','EAN 1','EAN'],
+    PRODUTO:      ['PRODUTO'],
+    APRESENTACAO: ['APRESENTACAO','APRESENTAÇÃO'],
+    TIPO_PRODUTO: ['TIPOPRODUTO','TIPO_PRODUTO'],
+    REGIME_PRECO: ['REGIMEDEPRECO','REGIME_PRECO','REGIMEDEPRE'],
+    PRECO:        ['PRECO','PREÇO'],
+  };
+  const map = {};
+  for (const [field, variants] of Object.entries(targets)) {
+    map[field] = keys.find(k => variants.includes(normalize(k))) || keys.find(k => normalize(k).includes(normalize(field.split('_')[0]))) || '';
+  }
+  return map;
+}
+
+function loadData(records, fileName, sheetName) {
+  substanceMap = {};
+  records.forEach(r => {
+    if (!substanceMap[r.SUBSTANCIA]) substanceMap[r.SUBSTANCIA] = [];
+    substanceMap[r.SUBSTANCIA].push(r);
+  });
+  allSubstances = Object.keys(substanceMap).sort();
+
+  // UI: esconde upload area, mostra filtro
+  document.getElementById('uploadArea').style.display = 'none';
+  document.getElementById('filterCard').style.display = '';
+  document.getElementById('emptyState').style.display = 'block';
+  document.getElementById('substanciaInput').disabled = false;
+
+  // Reset busca
+  currentSubstance = null;
+  document.getElementById('substanciaInput').value = '';
+  document.getElementById('kpiRow').style.display = 'none';
+  document.getElementById('winnerBanner').style.display = 'none';
+  document.getElementById('contentGrid').style.display = 'none';
+
+  document.getElementById('headerSubtitle').textContent =
+    `${fileName} · aba "${sheetName}" · ${records.length.toLocaleString('pt-BR')} produtos · ${allSubstances.length.toLocaleString('pt-BR')} substâncias`;
+
+  showToast(`✅ ${records.length.toLocaleString('pt-BR')} produtos carregados`, 'success');
+}
+
+// --- FILE INPUT LISTENERS ---
+['fileInputMain','fileInputHeader'].forEach(id => {
+  document.getElementById(id).addEventListener('change', e => handleFile(e.target.files[0]));
+});
+
+// Drag & drop
+const uploadArea = document.getElementById('uploadArea');
+uploadArea.addEventListener('dragover', e => { e.preventDefault(); uploadArea.classList.add('drag'); });
+uploadArea.addEventListener('dragleave', () => uploadArea.classList.remove('drag'));
+uploadArea.addEventListener('drop', e => { e.preventDefault(); uploadArea.classList.remove('drag'); handleFile(e.dataTransfer.files[0]); });
+uploadArea.addEventListener('click', e => { if (!e.target.closest('label')) document.getElementById('fileInputMain').click(); });
+
+// --- AUTOCOMPLETE ---
+const input = document.getElementById('substanciaInput');
+const dropdown = document.getElementById('dropdown');
+
+input.addEventListener('input', () => {
+  const q = input.value.trim().toUpperCase();
+  if (!q) { dropdown.classList.remove('open'); return; }
+  const matches = allSubstances.filter(s => s.includes(q)).slice(0, 40);
+  if (!matches.length) { dropdown.classList.remove('open'); return; }
+  const re = new RegExp(q.replace(/[.*+?^${}()|[\]\\]/g,'\\$&'), 'g');
+  dropdown.innerHTML = matches.map(s =>
+    `<div class="drop-item" data-val="${s}">${s.replace(re, m => `<mark>${m}</mark>`)}</div>`
+  ).join('');
+  dropdown.classList.add('open');
+});
+
+dropdown.addEventListener('click', e => {
+  const item = e.target.closest('.drop-item');
+  if (!item) return;
+  input.value = item.dataset.val;
+  dropdown.classList.remove('open');
+  selectSubstance(item.dataset.val);
+});
+
+document.addEventListener('click', e => {
+  if (!e.target.closest('.search-wrap')) dropdown.classList.remove('open');
+});
+
+input.addEventListener('keydown', e => {
+  if (e.key === 'Enter') {
+    const first = dropdown.querySelector('.drop-item');
+    if (first) { input.value = first.dataset.val; dropdown.classList.remove('open'); selectSubstance(first.dataset.val); }
+  }
+});
+
+// --- CHIPS ---
+document.getElementById('chipRow').addEventListener('click', e => {
+  const chip = e.target.closest('.chip');
+  if (!chip) return;
+  document.querySelectorAll('.chip').forEach(c => c.classList.remove('active'));
+  chip.classList.add('active');
+  currentTipo = chip.dataset.tipo;
+  if (currentSubstance) renderData();
+});
+
+// --- SORT ---
+function sortTable(key) {
+  if (sortKey === key) sortDir *= -1;
+  else { sortKey = key; sortDir = 1; }
+  document.querySelectorAll('thead th').forEach(th => { th.classList.remove('sorted'); th.querySelector('.sort-arrow').textContent = '↕'; });
+  const th = document.getElementById('th-' + key);
+  th.classList.add('sorted');
+  th.querySelector('.sort-arrow').textContent = sortDir === 1 ? '↑' : '↓';
+  if (currentSubstance) renderData();
+}
+
+// --- SELECT SUBSTANCE ---
+function selectSubstance(name) {
+  currentSubstance = name;
+  sortKey = 'PRECO'; sortDir = 1;
+  document.querySelectorAll('thead th').forEach(th => { th.classList.remove('sorted'); th.querySelector('.sort-arrow').textContent = '↕'; });
+  const th = document.getElementById('th-PRECO');
+  th.classList.add('sorted');
+  th.querySelector('.sort-arrow').textContent = '↑';
+  renderData();
+}
+
+// --- HELPERS ---
+function formatPrice(v) {
+  if (v === null || v === undefined || v === '') return null;
+  const n = parseFloat(v);
+  return isNaN(n) ? null : n;
+}
+function fmtBRL(v) {
+  return new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(v);
+}
+
+// --- RENDER ---
+function renderData() {
+  const rows = substanceMap[currentSubstance] || [];
+  const filtered = currentTipo ? rows.filter(r => r.TIPO_PRODUTO === currentTipo) : rows;
+
+  document.getElementById('emptyState').style.display = 'none';
+  document.getElementById('kpiRow').style.display = '';
+  document.getElementById('contentGrid').style.display = '';
+
+  const sorted = [...filtered].sort((a, b) => {
+    if (sortKey === 'PRECO') {
+      return ((formatPrice(a.PRECO) ?? Infinity) - (formatPrice(b.PRECO) ?? Infinity)) * sortDir;
+    }
+    return String(a[sortKey]).localeCompare(String(b[sortKey]), 'pt-BR') * sortDir;
+  });
+
+  const priced = filtered.filter(r => formatPrice(r.PRECO) !== null);
+  const prices = priced.map(r => formatPrice(r.PRECO));
+  const minPrice = prices.length ? Math.min(...prices) : null;
+  const maxPrice = prices.length ? Math.max(...prices) : null;
+  const avgPrice = prices.length ? prices.reduce((a,b)=>a+b,0)/prices.length : null;
+
+  document.getElementById('kpiTotal').textContent = filtered.length;
+  document.getElementById('kpiSubTotal').textContent = rows.length + ' no total';
+  document.getElementById('kpiLabs').textContent = new Set(filtered.map(r => r.LABORATORIO)).size;
+  document.getElementById('kpiMin').textContent = minPrice !== null ? fmtBRL(minPrice) : '—';
+  document.getElementById('kpiMax').textContent = maxPrice !== null ? fmtBRL(maxPrice) : '—';
+  document.getElementById('kpiAvg').textContent = avgPrice !== null ? fmtBRL(avgPrice) : '—';
+  if (minPrice !== null) {
+    document.getElementById('kpiMinSub').textContent = (priced.find(r => formatPrice(r.PRECO) === minPrice) || {}).LABORATORIO || '';
+    document.getElementById('kpiMaxSub').textContent = (priced.find(r => formatPrice(r.PRECO) === maxPrice) || {}).LABORATORIO || '';
+  }
+
+  const banner = document.getElementById('winnerBanner');
+  if (minPrice !== null) {
+    const winner = priced.find(r => formatPrice(r.PRECO) === minPrice);
+    banner.style.display = 'flex';
+    document.getElementById('winnerName').textContent = winner.LABORATORIO;
+    document.getElementById('winnerDetail').textContent = winner.PRODUTO + ' · ' + winner.APRESENTACAO + ' · ' + winner.TIPO_PRODUTO;
+    document.getElementById('winnerPrice').textContent = fmtBRL(minPrice);
+  } else {
+    banner.style.display = 'none';
+  }
+
+  document.getElementById('tableCount').textContent = sorted.length + ' itens';
+  document.getElementById('tableBody').innerHTML = sorted.map(r => {
+    const p = formatPrice(r.PRECO);
+    const isCheapest = p !== null && p === minPrice;
+    const tipoClass = ['GENÉRICO','SIMILAR','NOVO','BIOLÓGICO'].includes(r.TIPO_PRODUTO) ? 'tipo-' + r.TIPO_PRODUTO : 'tipo-default';
+    const priceCell = p === null
+      ? `<span class="td-price" style="color:var(--muted);font-style:italic;font-size:12px;font-weight:400">sem preço</span>`
+      : `<span class="td-price ${isCheapest?'price-min':''}">${fmtBRL(p)}${isCheapest?'<span class="price-star">★</span>':''}</span>`;
+    return `<tr class="${isCheapest?'cheapest':''}">
+      <td><div class="td-lab">${r.LABORATORIO}</div></td>
+      <td><div class="td-produto">${r.PRODUTO}</div></td>
+      <td><div class="td-apres">${r.APRESENTACAO}</div></td>
+      <td><span class="badge-tipo ${tipoClass}">${r.TIPO_PRODUTO||'—'}</span></td>
+      <td>${priceCell}</td>
+    </tr>`;
+  }).join('');
+
+  renderChart(sorted, minPrice);
+}
+
+function renderChart(rows, minPrice) {
+  const chartRows = rows.filter(r => formatPrice(r.PRECO) !== null).slice(0, 25);
+  document.getElementById('chartCount').textContent = rows.length > 25 ? 'top 25 produtos' : 'por produto';
+  if (chartInstance) chartInstance.destroy();
+  const canvas = document.getElementById('barChart');
+  canvas.style.height = Math.max(200, chartRows.length * 34 + 60) + 'px';
+  chartInstance = new Chart(canvas.getContext('2d'), {
+    type: 'bar',
+    data: {
+      labels: chartRows.map(r => [r.LABORATORIO.length > 22 ? r.LABORATORIO.slice(0,22)+'…' : r.LABORATORIO, r.APRESENTACAO]),
+      datasets: [{
+        label: 'Preço (R$)',
+        data: chartRows.map(r => formatPrice(r.PRECO)),
+        backgroundColor: chartRows.map(r => formatPrice(r.PRECO) === minPrice ? 'rgba(0,201,167,0.85)' : 'rgba(123,97,255,0.55)'),
+        borderColor: chartRows.map(r => formatPrice(r.PRECO) === minPrice ? '#00c9a7' : '#7b61ff'),
+        borderWidth: 1.5, borderRadius: 5
+      }]
+    },
+    options: {
+      indexAxis: 'y', responsive: true, maintainAspectRatio: false,
+      plugins: { legend: { display: false }, tooltip: { callbacks: { label: ctx => ' ' + fmtBRL(ctx.parsed.x) } } },
+      scales: {
+        x: { grid: { color: 'rgba(42,51,68,0.6)' }, ticks: { color: '#8b949e', font: { size: 11 }, callback: v => 'R$ ' + v.toLocaleString('pt-BR') } },
+        y: { grid: { display: false }, ticks: { color: '#e6edf3', font: { size: 11 } } }
+      }
+    }
+  });
+}
+</script>
+</body>
+</html>
