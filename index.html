@@ -517,26 +517,49 @@ function renderData() {
 }
 
 function renderChart(rows, minPrice) {
-  const chartRows = rows.filter(r => formatPrice(r.PRECO) !== null).slice(0, 25);
-  document.getElementById('chartCount').textContent = rows.length > 25 ? 'top 25 produtos' : 'por produto';
+  // Agrupar por laboratório e pegar o MAIOR preço de cada um
+  const labMap = {};
+  rows.forEach(r => {
+    const p = formatPrice(r.PRECO);
+    if (p === null) return;
+    const lab = r.LABORATORIO;
+    if (!labMap[lab] || p > labMap[lab]) labMap[lab] = p;
+  });
+
+  // Ordenar do maior para o menor e limitar a 25
+  const grouped = Object.entries(labMap)
+    .sort((a, b) => b[1] - a[1])
+    .slice(0, 25);
+
+  document.getElementById('chartCount').textContent =
+    Object.keys(labMap).length > 25 ? 'top 25 laboratórios · preço máximo' : 'preço máximo por laboratório';
+
   if (chartInstance) chartInstance.destroy();
   const canvas = document.getElementById('barChart');
-  canvas.style.height = Math.max(200, chartRows.length * 34 + 60) + 'px';
+  canvas.style.height = Math.max(200, grouped.length * 38 + 60) + 'px';
+
+  // Menor máximo entre os laboratórios (o lab mais barato no seu teto)
+  const allMaxPrices = grouped.map(([,v]) => v);
+  const minOfMax = allMaxPrices.length ? Math.min(...allMaxPrices) : null;
+
   chartInstance = new Chart(canvas.getContext('2d'), {
     type: 'bar',
     data: {
-      labels: chartRows.map(r => [r.LABORATORIO.length > 22 ? r.LABORATORIO.slice(0,22)+'…' : r.LABORATORIO, r.APRESENTACAO]),
+      labels: grouped.map(([lab]) => lab.length > 26 ? lab.slice(0,26)+'…' : lab),
       datasets: [{
-        label: 'Preço (R$)',
-        data: chartRows.map(r => formatPrice(r.PRECO)),
-        backgroundColor: chartRows.map(r => formatPrice(r.PRECO) === minPrice ? 'rgba(0,201,167,0.85)' : 'rgba(123,97,255,0.55)'),
-        borderColor: chartRows.map(r => formatPrice(r.PRECO) === minPrice ? '#00c9a7' : '#7b61ff'),
+        label: 'Preço máximo (R$)',
+        data: grouped.map(([,v]) => v),
+        backgroundColor: grouped.map(([,v]) => v === minOfMax ? 'rgba(0,201,167,0.85)' : 'rgba(123,97,255,0.55)'),
+        borderColor: grouped.map(([,v]) => v === minOfMax ? '#00c9a7' : '#7b61ff'),
         borderWidth: 1.5, borderRadius: 5
       }]
     },
     options: {
       indexAxis: 'y', responsive: true, maintainAspectRatio: false,
-      plugins: { legend: { display: false }, tooltip: { callbacks: { label: ctx => ' ' + fmtBRL(ctx.parsed.x) } } },
+      plugins: {
+        legend: { display: false },
+        tooltip: { callbacks: { label: ctx => ' Máx: ' + fmtBRL(ctx.parsed.x) } }
+      },
       scales: {
         x: { grid: { color: 'rgba(42,51,68,0.6)' }, ticks: { color: '#8b949e', font: { size: 11 }, callback: v => 'R$ ' + v.toLocaleString('pt-BR') } },
         y: { grid: { display: false }, ticks: { color: '#e6edf3', font: { size: 11 } } }
