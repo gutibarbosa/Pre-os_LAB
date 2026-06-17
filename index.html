@@ -21,95 +21,114 @@
     --radius: 10px;
   }
   * { box-sizing: border-box; margin: 0; padding: 0; }
-  body { background: var(--bg); color: var(--text); font-family: 'Segoe UI', system-ui, sans-serif; min-height: 100vh; }
+  body { background: var(--bg); color: var(--text); font-family: 'Segoe UI', system-ui, sans-serif; min-height: 100vh; display: flex; flex-direction: column; }
 
-  header { background: var(--surface); border-bottom: 1px solid var(--border); padding: 16px 32px; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 12px; }
-  .header-left { display: flex; align-items: center; gap: 16px; }
+  /* HEADER */
+  header { background: var(--surface); border-bottom: 1px solid var(--border); padding: 14px 24px; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 10px; position: sticky; top: 0; z-index: 200; }
+  .header-left { display: flex; align-items: center; gap: 14px; }
   .logo-pill { background: var(--accent); color: #000; font-weight: 800; font-size: 11px; letter-spacing: 1.5px; padding: 4px 10px; border-radius: 20px; white-space: nowrap; }
-  header h1 { font-size: 16px; font-weight: 600; color: var(--text); }
-  header .subtitle { font-size: 12px; color: var(--muted); margin-top: 2px; }
-
-  /* UPLOAD BUTTON */
-  .upload-btn {
-    display: flex; align-items: center; gap: 8px;
-    background: var(--surface2); border: 1px solid var(--border);
-    border-radius: 8px; padding: 8px 16px; cursor: pointer;
-    font-size: 13px; color: var(--text); transition: all 0.15s;
-    white-space: nowrap;
-  }
+  header h1 { font-size: 15px; font-weight: 600; }
+  header .subtitle { font-size: 11px; color: var(--muted); margin-top: 2px; }
+  .header-right { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+  .upload-btn { display: flex; align-items: center; gap: 8px; background: var(--surface2); border: 1px solid var(--border); border-radius: 8px; padding: 7px 14px; cursor: pointer; font-size: 12px; color: var(--text); transition: all 0.15s; white-space: nowrap; }
   .upload-btn:hover { border-color: var(--accent); color: var(--accent); }
   .upload-btn input { display: none; }
-  .file-status { font-size: 12px; color: var(--muted); margin-top: 2px; }
-  .file-status.loaded { color: var(--accent); }
 
-  main { padding: 28px 32px; max-width: 1400px; margin: 0 auto; }
+  /* LAYOUT */
+  .app-body { display: flex; flex: 1; overflow: hidden; }
 
-  /* UPLOAD AREA (initial state) */
-  #uploadArea {
-    border: 2px dashed var(--border); border-radius: var(--radius);
-    padding: 64px 40px; text-align: center; cursor: pointer;
-    transition: all 0.2s; margin-bottom: 24px;
-  }
+  /* SIDEBAR */
+  #sidebar { width: 280px; min-width: 280px; background: var(--surface); border-right: 1px solid var(--border); display: flex; flex-direction: column; transition: width 0.25s, min-width 0.25s; overflow: hidden; }
+  #sidebar.collapsed { width: 0; min-width: 0; }
+  .sidebar-inner { width: 280px; padding: 16px; overflow-y: auto; flex: 1; }
+  .sidebar-section { margin-bottom: 20px; }
+  .sidebar-title { font-size: 10px; font-weight: 700; letter-spacing: 1.2px; color: var(--accent); text-transform: uppercase; margin-bottom: 10px; display: flex; align-items: center; gap: 6px; }
+  .sidebar-toggle { background: var(--surface); border: 1px solid var(--border); border-radius: 6px; padding: 4px 8px; cursor: pointer; color: var(--muted); font-size: 16px; line-height: 1; transition: all 0.15s; }
+  .sidebar-toggle:hover { color: var(--accent); border-color: var(--accent); }
+
+  /* NAV TABS */
+  .nav-tabs { display: flex; gap: 4px; padding: 0 24px; background: var(--surface); border-bottom: 1px solid var(--border); flex-wrap: wrap; }
+  .nav-tab { padding: 10px 16px; font-size: 12px; font-weight: 600; color: var(--muted); cursor: pointer; border-bottom: 2px solid transparent; transition: all 0.15s; white-space: nowrap; }
+  .nav-tab:hover { color: var(--text); }
+  .nav-tab.active { color: var(--accent); border-bottom-color: var(--accent); }
+
+  /* MAIN CONTENT */
+  #mainContent { flex: 1; overflow-y: auto; padding: 24px; }
+
+  /* UPLOAD AREA */
+  #uploadArea { border: 2px dashed var(--border); border-radius: var(--radius); padding: 64px 40px; text-align: center; cursor: pointer; transition: all 0.2s; max-width: 600px; margin: 40px auto; }
   #uploadArea:hover, #uploadArea.drag { border-color: var(--accent); background: rgba(0,201,167,0.04); }
   #uploadArea .upload-icon { font-size: 48px; margin-bottom: 16px; }
-  #uploadArea h2 { font-size: 18px; color: var(--text); margin-bottom: 8px; }
+  #uploadArea h2 { font-size: 18px; margin-bottom: 8px; }
   #uploadArea p { font-size: 14px; color: var(--muted); margin-bottom: 20px; }
   #uploadArea input { display: none; }
-  .btn-primary {
-    display: inline-block; background: var(--accent); color: #000;
-    font-weight: 700; font-size: 13px; padding: 10px 24px;
-    border-radius: 8px; cursor: pointer; border: none; transition: opacity 0.15s;
-  }
+  .btn-primary { display: inline-block; background: var(--accent); color: #000; font-weight: 700; font-size: 13px; padding: 10px 24px; border-radius: 8px; cursor: pointer; border: none; transition: opacity 0.15s; }
   .btn-primary:hover { opacity: 0.85; }
-  .upload-hint { font-size: 12px; color: var(--muted); margin-top: 12px; }
+  .btn-secondary { background: var(--surface2); color: var(--text); border: 1px solid var(--border); font-size: 12px; font-weight: 600; padding: 7px 14px; border-radius: 8px; cursor: pointer; transition: all 0.15s; }
+  .btn-secondary:hover { border-color: var(--accent); color: var(--accent); }
+  .btn-danger { background: rgba(255,77,109,0.12); color: var(--danger); border: 1px solid rgba(255,77,109,0.3); font-size: 12px; font-weight: 600; padding: 7px 14px; border-radius: 8px; cursor: pointer; transition: all 0.15s; }
+  .btn-danger:hover { background: rgba(255,77,109,0.2); }
 
-  /* FILTER */
-  .filter-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 20px 24px; margin-bottom: 24px; }
-  .filter-label { font-size: 11px; font-weight: 700; letter-spacing: 1px; color: var(--accent); text-transform: uppercase; margin-bottom: 10px; }
-  .search-wrap { position: relative; flex: 1; min-width: 280px; }
-  .search-icon { position: absolute; left: 14px; top: 50%; transform: translateY(-50%); color: var(--muted); font-size: 16px; pointer-events: none; }
-  #substanciaInput { width: 100%; background: var(--bg); border: 1px solid var(--border); border-radius: 8px; color: var(--text); font-size: 14px; padding: 11px 14px 11px 42px; outline: none; transition: border-color 0.15s; }
-  #substanciaInput:focus { border-color: var(--accent); }
-  #substanciaInput::placeholder { color: var(--muted); }
-  #substanciaInput:disabled { opacity: 0.4; cursor: not-allowed; }
-  #dropdown { display: none; position: absolute; top: calc(100% + 6px); left: 0; right: 0; background: var(--surface2); border: 1px solid var(--border); border-radius: 8px; max-height: 260px; overflow-y: auto; z-index: 100; box-shadow: 0 8px 24px rgba(0,0,0,0.5); }
-  #dropdown.open { display: block; }
-  .drop-item { padding: 10px 16px; font-size: 13px; cursor: pointer; border-bottom: 1px solid var(--border); line-height: 1.4; }
-  .drop-item:last-child { border-bottom: none; }
-  .drop-item:hover { background: var(--border); color: var(--accent); }
-  .drop-item mark { background: transparent; color: var(--accent); font-weight: 700; }
-  .chip-row { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 14px; }
-  .chip { background: var(--surface2); border: 1px solid var(--border); border-radius: 20px; padding: 4px 14px; font-size: 12px; color: var(--muted); cursor: pointer; transition: all 0.15s; user-select: none; }
-  .chip:hover, .chip.active { background: var(--accent); color: #000; border-color: var(--accent); font-weight: 600; }
+  /* MULTI-SELECT */
+  .ms-wrap { position: relative; }
+  .ms-box { background: var(--bg); border: 1px solid var(--border); border-radius: 8px; padding: 8px 10px; cursor: pointer; min-height: 38px; display: flex; align-items: flex-start; flex-wrap: wrap; gap: 4px; transition: border-color 0.15s; }
+  .ms-box:focus-within, .ms-box.open { border-color: var(--accent); }
+  .ms-placeholder { color: var(--muted); font-size: 13px; line-height: 22px; }
+  .ms-tag { background: rgba(0,201,167,0.15); color: var(--accent); border: 1px solid rgba(0,201,167,0.3); border-radius: 4px; padding: 2px 6px; font-size: 11px; font-weight: 600; display: flex; align-items: center; gap: 4px; white-space: nowrap; max-width: 180px; }
+  .ms-tag span { overflow: hidden; text-overflow: ellipsis; }
+  .ms-tag-remove { cursor: pointer; opacity: 0.7; font-size: 13px; flex-shrink: 0; }
+  .ms-tag-remove:hover { opacity: 1; }
+  .ms-input { border: none; outline: none; background: transparent; color: var(--text); font-size: 13px; min-width: 80px; flex: 1; padding: 1px 0; }
+  .ms-dropdown { display: none; position: absolute; top: calc(100% + 4px); left: 0; right: 0; background: var(--surface2); border: 1px solid var(--border); border-radius: 8px; max-height: 240px; overflow-y: auto; z-index: 500; box-shadow: 0 8px 24px rgba(0,0,0,0.6); }
+  .ms-dropdown.open { display: block; }
+  .ms-option { padding: 9px 14px; font-size: 13px; cursor: pointer; display: flex; align-items: center; gap: 8px; border-bottom: 1px solid rgba(42,51,68,0.4); }
+  .ms-option:last-child { border-bottom: none; }
+  .ms-option:hover { background: var(--border); }
+  .ms-option.selected { color: var(--accent); }
+  .ms-check { width: 14px; height: 14px; border: 1.5px solid var(--border); border-radius: 3px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; font-size: 10px; }
+  .ms-option.selected .ms-check { background: var(--accent); border-color: var(--accent); color: #000; }
+  .ms-empty { padding: 12px 14px; color: var(--muted); font-size: 12px; text-align: center; }
+  .ms-select-all { padding: 8px 14px; font-size: 11px; color: var(--accent); cursor: pointer; border-bottom: 1px solid var(--border); font-weight: 600; display: flex; gap: 10px; }
+  .ms-select-all span { cursor: pointer; }
+  .ms-select-all span:hover { text-decoration: underline; }
+  .ms-count { background: var(--accent); color: #000; border-radius: 10px; padding: 1px 7px; font-size: 10px; font-weight: 700; margin-left: auto; }
 
   /* KPIs */
-  .kpi-row { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 16px; margin-bottom: 24px; }
-  .kpi { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 18px 20px; }
-  .kpi-label { font-size: 11px; font-weight: 700; letter-spacing: 1px; color: var(--muted); text-transform: uppercase; margin-bottom: 8px; }
-  .kpi-value { font-size: 26px; font-weight: 800; color: var(--text); line-height: 1; }
-  .kpi-sub { font-size: 12px; color: var(--muted); margin-top: 4px; }
+  .kpi-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 12px; margin-bottom: 20px; }
+  .kpi { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 16px 18px; }
+  .kpi-label { font-size: 10px; font-weight: 700; letter-spacing: 1px; color: var(--muted); text-transform: uppercase; margin-bottom: 8px; }
+  .kpi-value { font-size: 22px; font-weight: 800; color: var(--text); line-height: 1; }
+  .kpi-sub { font-size: 11px; color: var(--muted); margin-top: 4px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   .kpi.highlight { border-color: var(--accent); }
   .kpi.highlight .kpi-value { color: var(--accent); }
   .kpi.danger { border-color: var(--danger); }
   .kpi.danger .kpi-value { color: var(--danger); }
+  .kpi.warn { border-color: var(--warn); }
+  .kpi.warn .kpi-value { color: var(--warn); }
+  .kpi.purple { border-color: var(--accent2); }
+  .kpi.purple .kpi-value { color: var(--accent2); }
 
-  /* WINNER */
-  #winnerBanner { display: none; background: linear-gradient(135deg, rgba(0,201,167,0.12), rgba(0,201,167,0.04)); border: 1px solid var(--accent); border-radius: var(--radius); padding: 16px 22px; margin-bottom: 24px; align-items: center; gap: 16px; flex-wrap: wrap; }
-  .winner-badge { background: var(--accent); color: #000; font-weight: 800; font-size: 11px; letter-spacing: 1px; padding: 4px 12px; border-radius: 20px; white-space: nowrap; }
+  /* WINNER BANNER */
+  #winnerBanner { display: none; background: linear-gradient(135deg, rgba(0,201,167,0.12), rgba(0,201,167,0.04)); border: 1px solid var(--accent); border-radius: var(--radius); padding: 14px 20px; margin-bottom: 20px; align-items: center; gap: 16px; flex-wrap: wrap; }
+  .winner-badge { background: var(--accent); color: #000; font-weight: 800; font-size: 10px; letter-spacing: 1px; padding: 3px 10px; border-radius: 20px; white-space: nowrap; }
   .winner-info { flex: 1; min-width: 200px; }
-  .winner-name { font-size: 15px; font-weight: 700; color: var(--text); }
-  .winner-detail { font-size: 12px; color: var(--muted); margin-top: 2px; }
-  .winner-price { font-size: 28px; font-weight: 900; color: var(--accent); white-space: nowrap; }
+  .winner-name { font-size: 14px; font-weight: 700; }
+  .winner-detail { font-size: 11px; color: var(--muted); margin-top: 2px; }
+  .winner-price { font-size: 26px; font-weight: 900; color: var(--accent); white-space: nowrap; }
 
-  /* CONTENT */
-  .content-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
-  @media (max-width: 900px) { .content-grid { grid-template-columns: 1fr; } }
-  .panel { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); overflow: hidden; }
-  .panel-header { display: flex; align-items: center; justify-content: space-between; padding: 14px 20px; border-bottom: 1px solid var(--border); font-size: 13px; font-weight: 700; color: var(--text); }
+  /* PANELS */
+  .panel { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); overflow: hidden; margin-bottom: 20px; }
+  .panel-header { display: flex; align-items: center; justify-content: space-between; padding: 12px 18px; border-bottom: 1px solid var(--border); font-size: 13px; font-weight: 700; gap: 10px; flex-wrap: wrap; }
+  .panel-header-left { display: flex; align-items: center; gap: 10px; }
   .panel-count { background: var(--border); color: var(--muted); font-size: 11px; font-weight: 600; padding: 2px 9px; border-radius: 10px; }
-  .table-wrap { overflow-x: auto; max-height: 480px; overflow-y: auto; }
+  .panel-actions { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+  .two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+  @media (max-width: 900px) { .two-col { grid-template-columns: 1fr; } }
+
+  /* TABLE */
+  .table-wrap { overflow-x: auto; max-height: 520px; overflow-y: auto; }
   table { width: 100%; border-collapse: collapse; font-size: 13px; }
-  thead th { background: var(--surface2); color: var(--muted); font-size: 11px; font-weight: 700; letter-spacing: 0.5px; text-transform: uppercase; padding: 10px 14px; text-align: left; position: sticky; top: 0; z-index: 2; white-space: nowrap; cursor: pointer; user-select: none; }
+  thead th { background: var(--surface2); color: var(--muted); font-size: 10px; font-weight: 700; letter-spacing: 0.5px; text-transform: uppercase; padding: 9px 12px; text-align: left; position: sticky; top: 0; z-index: 2; white-space: nowrap; cursor: pointer; user-select: none; }
   thead th:hover { color: var(--accent); }
   thead th .sort-arrow { margin-left: 4px; opacity: 0.4; }
   thead th.sorted .sort-arrow { opacity: 1; color: var(--accent); }
@@ -117,34 +136,94 @@
   tbody tr:hover { background: var(--surface2); }
   tbody tr.cheapest { background: rgba(0,201,167,0.06); }
   tbody tr.cheapest td:first-child { border-left: 3px solid var(--accent); }
-  tbody td { padding: 10px 14px; vertical-align: middle; }
-  .td-lab { font-weight: 600; color: var(--text); }
+  tbody tr.priciest { background: rgba(255,77,109,0.05); }
+  tbody tr.priciest td:first-child { border-left: 3px solid var(--danger); }
+  tbody td { padding: 9px 12px; vertical-align: middle; }
+  .td-lab { font-weight: 600; }
   .td-produto, .td-apres { color: var(--muted); font-size: 12px; }
-  .badge-tipo { display: inline-block; padding: 2px 8px; border-radius: 4px; font-size: 10px; font-weight: 700; letter-spacing: 0.5px; text-transform: uppercase; }
-  .tipo-GENÉRICO { background: rgba(123,97,255,0.2); color: #a78bfa; }
+  .badge-tipo { display: inline-block; padding: 2px 7px; border-radius: 4px; font-size: 10px; font-weight: 700; letter-spacing: 0.5px; text-transform: uppercase; }
+  .tipo-GENÉRICO, .tipo-GENERICO { background: rgba(123,97,255,0.2); color: #a78bfa; }
   .tipo-SIMILAR { background: rgba(0,201,167,0.15); color: var(--accent); }
   .tipo-NOVO { background: rgba(255,77,109,0.15); color: var(--danger); }
-  .tipo-BIOLÓGICO { background: rgba(255,183,3,0.15); color: var(--warn); }
+  .tipo-BIOLÓGICO, .tipo-BIOLOGICO { background: rgba(255,183,3,0.15); color: var(--warn); }
   .tipo-default { background: rgba(139,148,158,0.15); color: var(--muted); }
-  .td-price { font-weight: 700; font-size: 14px; white-space: nowrap; text-align: right; }
+  .td-price { font-weight: 700; font-size: 13px; white-space: nowrap; text-align: right; }
   .td-price.price-min { color: var(--accent); }
-  .price-star { margin-left: 4px; font-size: 12px; }
-  .chart-wrap { padding: 20px; position: relative; }
+  .td-price.price-max { color: var(--danger); }
+  .price-star { margin-left: 4px; font-size: 11px; }
+  .chart-wrap { padding: 18px; position: relative; }
+  .pct-diff { font-size: 11px; padding: 2px 7px; border-radius: 4px; font-weight: 700; }
+  .pct-diff.good { background: rgba(0,201,167,0.15); color: var(--accent); }
+  .pct-diff.bad { background: rgba(255,77,109,0.15); color: var(--danger); }
 
-  #emptyState { text-align: center; padding: 60px 40px; color: var(--muted); }
-  #emptyState .big-icon { font-size: 40px; margin-bottom: 12px; }
-  #emptyState h2 { font-size: 16px; color: var(--text); margin-bottom: 6px; }
-  #emptyState p { font-size: 13px; }
+  /* SEARCH WRAP (single) */
+  .search-wrap { position: relative; flex: 1; }
+  .search-icon { position: absolute; left: 12px; top: 50%; transform: translateY(-50%); color: var(--muted); font-size: 14px; pointer-events: none; }
+  .search-input { width: 100%; background: var(--bg); border: 1px solid var(--border); border-radius: 8px; color: var(--text); font-size: 13px; padding: 9px 12px 9px 36px; outline: none; transition: border-color 0.15s; }
+  .search-input:focus { border-color: var(--accent); }
+  .search-input::placeholder { color: var(--muted); }
+  .single-dropdown { display: none; position: absolute; top: calc(100% + 6px); left: 0; right: 0; background: var(--surface2); border: 1px solid var(--border); border-radius: 8px; max-height: 240px; overflow-y: auto; z-index: 400; box-shadow: 0 8px 24px rgba(0,0,0,0.5); }
+  .single-dropdown.open { display: block; }
+  .drop-item { padding: 9px 14px; font-size: 13px; cursor: pointer; border-bottom: 1px solid rgba(42,51,68,0.4); }
+  .drop-item:last-child { border-bottom: none; }
+  .drop-item:hover { background: var(--border); color: var(--accent); }
+  .drop-item mark { background: transparent; color: var(--accent); font-weight: 700; }
+
+  /* CHIP ROW */
+  .chip-row { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 12px; }
+  .chip { background: var(--surface2); border: 1px solid var(--border); border-radius: 20px; padding: 4px 12px; font-size: 11px; color: var(--muted); cursor: pointer; transition: all 0.15s; user-select: none; }
+  .chip:hover, .chip.active { background: var(--accent); color: #000; border-color: var(--accent); font-weight: 600; }
+  .chip.lab-chip { max-width: 200px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .chip.lab-chip.active { background: var(--accent2); border-color: var(--accent2); }
+
+  /* APRES FILTER */
+  .apres-filter { margin-top: 10px; display: flex; gap: 6px; flex-wrap: wrap; }
+  .apres-chip { background: var(--surface2); border: 1px solid var(--border); border-radius: 6px; padding: 4px 10px; font-size: 11px; color: var(--muted); cursor: pointer; transition: all 0.15s; }
+  .apres-chip:hover, .apres-chip.active { background: rgba(123,97,255,0.2); color: var(--accent2); border-color: var(--accent2); }
+
+  /* EMPTY STATE */
+  .empty-state { text-align: center; padding: 60px 40px; color: var(--muted); }
+  .empty-state .big-icon { font-size: 40px; margin-bottom: 12px; }
+  .empty-state h2 { font-size: 16px; color: var(--text); margin-bottom: 6px; }
+  .empty-state p { font-size: 13px; }
 
   /* TOAST */
-  #toast { position: fixed; bottom: 28px; left: 50%; transform: translateX(-50%) translateY(80px); background: var(--surface2); border: 1px solid var(--border); border-radius: 8px; padding: 12px 22px; font-size: 13px; color: var(--text); z-index: 9999; transition: transform 0.3s; white-space: nowrap; box-shadow: 0 8px 24px rgba(0,0,0,0.5); }
+  #toast { position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%) translateY(80px); background: var(--surface2); border: 1px solid var(--border); border-radius: 8px; padding: 10px 20px; font-size: 13px; color: var(--text); z-index: 9999; transition: transform 0.3s; white-space: nowrap; box-shadow: 0 8px 24px rgba(0,0,0,0.5); }
   #toast.show { transform: translateX(-50%) translateY(0); }
   #toast.success { border-color: var(--accent); color: var(--accent); }
   #toast.error { border-color: var(--danger); color: var(--danger); }
 
-  ::-webkit-scrollbar { width: 6px; height: 6px; }
+  /* RANKING TABLE */
+  .rank-num { font-weight: 800; color: var(--muted); width: 32px; text-align: center; }
+  .rank-num.gold { color: #ffd700; }
+  .rank-num.silver { color: #c0c0c0; }
+  .rank-num.bronze { color: #cd7f32; }
+
+  /* SECTION TITLE */
+  .section-title { font-size: 12px; font-weight: 700; color: var(--muted); text-transform: uppercase; letter-spacing: 1px; margin-bottom: 12px; margin-top: 20px; }
+
+  /* COMPARADOR */
+  .comparador-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 20px; }
+  @media (max-width: 700px) { .comparador-grid { grid-template-columns: 1fr; } }
+  .comparador-table { width: 100%; border-collapse: collapse; font-size: 12px; }
+  .comparador-table th { background: var(--surface2); padding: 8px 12px; font-size: 10px; font-weight: 700; color: var(--muted); text-transform: uppercase; letter-spacing: 0.5px; white-space: nowrap; }
+  .comparador-table td { padding: 8px 12px; border-bottom: 1px solid rgba(42,51,68,0.4); }
+
+  /* FILTER BAR IN PANEL */
+  .filter-bar { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; padding: 10px 18px; border-bottom: 1px solid var(--border); background: var(--surface2); }
+  .filter-bar label { font-size: 11px; color: var(--muted); white-space: nowrap; }
+  .filter-bar select { background: var(--bg); border: 1px solid var(--border); color: var(--text); border-radius: 6px; padding: 5px 8px; font-size: 12px; outline: none; }
+  .filter-bar select:focus { border-color: var(--accent); }
+
+  ::-webkit-scrollbar { width: 5px; height: 5px; }
   ::-webkit-scrollbar-track { background: var(--surface); }
   ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+
+  .progress-bar { height: 4px; background: var(--border); border-radius: 2px; overflow: hidden; margin-top: 6px; }
+  .progress-fill { height: 100%; background: var(--accent); border-radius: 2px; transition: width 0.4s; }
+  .diff-badge { font-size: 11px; font-weight: 700; padding: 2px 7px; border-radius: 4px; }
+  .diff-badge.green { background: rgba(0,201,167,0.15); color: var(--accent); }
+  .diff-badge.red { background: rgba(255,77,109,0.15); color: var(--danger); }
 </style>
 </head>
 <body>
@@ -155,109 +234,347 @@
   <div class="header-left">
     <div class="logo-pill">FARMÁCIA</div>
     <div>
-      <h1>Comparação de Preços por Substância</h1>
+      <h1>Dashboard de Comparação de Preços</h1>
       <div class="subtitle" id="headerSubtitle">Carregue a planilha para começar</div>
     </div>
   </div>
-  <label class="upload-btn" id="headerUploadBtn" title="Carregar nova planilha">
-    📂 Carregar planilha
-    <input type="file" id="fileInputHeader" accept=".xlsx,.xls">
-  </label>
+  <div class="header-right">
+    <button class="sidebar-toggle" id="sidebarToggleBtn" title="Recolher filtros" onclick="toggleSidebar()">☰</button>
+    <label class="upload-btn" title="Carregar planilha">
+      📂 Carregar planilha
+      <input type="file" id="fileInputHeader" accept=".xlsx,.xls">
+    </label>
+  </div>
 </header>
 
-<main>
-  <!-- UPLOAD AREA (estado inicial) -->
-  <div id="uploadArea">
-    <div class="upload-icon">📊</div>
-    <h2>Nenhuma planilha carregada</h2>
-    <p>Arraste o arquivo aqui ou clique para selecionar</p>
-    <label class="btn-primary">
-      Selecionar arquivo .xlsx
-      <input type="file" id="fileInputMain" accept=".xlsx,.xls">
-    </label>
-    <p class="upload-hint">Compatível com a planilha BASE_DADOS.xlsx · aba "FILTRADO DASH"</p>
+<!-- NAV TABS (oculto até ter dados) -->
+<div id="navTabs" style="display:none">
+  <div class="nav-tabs">
+    <div class="nav-tab active" data-tab="substancia" onclick="switchTab('substancia')">💊 Por Substância</div>
+    <div class="nav-tab" data-tab="laboratorio" onclick="switchTab('laboratorio')">🏭 Por Laboratório</div>
+    <div class="nav-tab" data-tab="comparador" onclick="switchTab('comparador')">⚖️ Comparador Avançado</div>
+    <div class="nav-tab" data-tab="executivo" onclick="switchTab('executivo')">📊 Visão Executiva</div>
   </div>
+</div>
 
-  <!-- FILTER (oculto até ter dados) -->
-  <div class="filter-card" id="filterCard" style="display:none">
-    <div class="filter-label">🔍 Filtrar por Substância Ativa</div>
-    <div class="search-wrap">
-      <span class="search-icon">⌕</span>
-      <input type="text" id="substanciaInput" placeholder="Digite o nome da substância…" autocomplete="off" disabled>
-      <div id="dropdown"></div>
+<div class="app-body">
+
+  <!-- SIDEBAR (filtros laterais) -->
+  <div id="sidebar">
+    <div class="sidebar-inner" id="sidebarInner">
+
+      <!-- FILTROS DA ABA SUBSTÂNCIA -->
+      <div id="sidebarSubstancia">
+        <div class="sidebar-section">
+          <div class="sidebar-title">🔍 Substância Ativa</div>
+          <div class="search-wrap">
+            <span class="search-icon">⌕</span>
+            <input type="text" id="substanciaInput" class="search-input" placeholder="Buscar substância…" autocomplete="off" disabled>
+            <div id="substanciaDropdown" class="single-dropdown"></div>
+          </div>
+          <div class="chip-row" id="chipRow" style="margin-top:8px">
+            <div class="chip active" data-tipo="">Todos</div>
+            <div class="chip" data-tipo="GENÉRICO">Genérico</div>
+            <div class="chip" data-tipo="SIMILAR">Similar</div>
+            <div class="chip" data-tipo="NOVO">Novo</div>
+            <div class="chip" data-tipo="BIOLÓGICO">Biológico</div>
+          </div>
+        </div>
+
+        <div class="sidebar-section" id="apresSection" style="display:none">
+          <div class="sidebar-title">💊 Apresentação</div>
+          <div class="apres-filter" id="apresFilter"></div>
+        </div>
+
+        <div class="sidebar-section">
+          <div class="sidebar-title">⚙️ Ações</div>
+          <div style="display:flex;flex-direction:column;gap:8px;">
+            <button class="btn-danger" onclick="clearFilters()">🗑 Limpar filtros</button>
+            <button class="btn-secondary" onclick="exportarTabela()">⬇ Exportar para Excel</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- FILTROS DA ABA LABORATÓRIO -->
+      <div id="sidebarLaboratorio" style="display:none">
+        <div class="sidebar-section">
+          <div class="sidebar-title">🏭 Laboratório</div>
+          <div class="search-wrap">
+            <span class="search-icon">⌕</span>
+            <input type="text" id="labInput" class="search-input" placeholder="Buscar laboratório…" autocomplete="off" disabled>
+            <div id="labDropdown" class="single-dropdown"></div>
+          </div>
+        </div>
+        <div class="sidebar-section">
+          <div style="display:flex;flex-direction:column;gap:8px;">
+            <button class="btn-secondary" onclick="exportarTabelaLab()">⬇ Exportar para Excel</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- FILTROS DO COMPARADOR -->
+      <div id="sidebarComparador" style="display:none">
+        <div class="sidebar-section">
+          <div class="sidebar-title">💊 Substâncias</div>
+          <div class="ms-wrap" id="compSubsWrap">
+            <div class="ms-box" id="compSubsBox" onclick="toggleMs('compSubs')">
+              <span class="ms-placeholder" id="compSubsPlaceholder">Selecionar substâncias…</span>
+              <input type="text" class="ms-input" id="compSubsInput" placeholder="" oninput="filterMs('compSubs',this.value)" onclick="event.stopPropagation()">
+            </div>
+            <div class="ms-dropdown" id="compSubsDropdown">
+              <div class="ms-select-all"><span onclick="selectAllMs('compSubs')">Selecionar todos</span><span onclick="clearMs('compSubs')">Limpar</span></div>
+              <div id="compSubsOptions"></div>
+            </div>
+          </div>
+        </div>
+        <div class="sidebar-section">
+          <div class="sidebar-title">🏭 Laboratórios</div>
+          <div class="ms-wrap" id="compLabsWrap">
+            <div class="ms-box" id="compLabsBox" onclick="toggleMs('compLabs')">
+              <span class="ms-placeholder" id="compLabsPlaceholder">Selecionar laboratórios…</span>
+              <input type="text" class="ms-input" id="compLabsInput" placeholder="" oninput="filterMs('compLabs',this.value)" onclick="event.stopPropagation()">
+            </div>
+            <div class="ms-dropdown" id="compLabsDropdown">
+              <div class="ms-select-all"><span onclick="selectAllMs('compLabs')">Selecionar todos</span><span onclick="clearMs('compLabs')">Limpar</span></div>
+              <div id="compLabsOptions"></div>
+            </div>
+          </div>
+        </div>
+        <div class="sidebar-section">
+          <div style="display:flex;flex-direction:column;gap:8px;">
+            <button class="btn-primary" style="font-size:12px;" onclick="renderComparador()">▶ Comparar</button>
+            <button class="btn-danger" onclick="clearComparador()">🗑 Limpar</button>
+            <button class="btn-secondary" onclick="exportarComparador()">⬇ Exportar Excel</button>
+          </div>
+        </div>
+      </div>
+
     </div>
-    <div class="chip-row" id="chipRow">
-      <div class="chip active" data-tipo="">Todos os tipos</div>
-      <div class="chip" data-tipo="GENÉRICO">Genérico</div>
-      <div class="chip" data-tipo="SIMILAR">Similar</div>
-      <div class="chip" data-tipo="NOVO">Novo</div>
-      <div class="chip" data-tipo="BIOLÓGICO">Biológico</div>
+  </div>
+
+  <!-- MAIN CONTENT -->
+  <div id="mainContent">
+
+    <!-- UPLOAD AREA -->
+    <div id="uploadArea">
+      <div class="upload-icon">📊</div>
+      <h2>Nenhuma planilha carregada</h2>
+      <p>Arraste o arquivo aqui ou clique para selecionar</p>
+      <label class="btn-primary">
+        Selecionar arquivo .xlsx
+        <input type="file" id="fileInputMain" accept=".xlsx,.xls">
+      </label>
+      <p style="font-size:12px;color:var(--muted);margin-top:12px;">Compatível com BASE_DADOS.xlsx · aba "FILTRADO DASH"</p>
     </div>
-  </div>
 
-  <!-- KPIs -->
-  <div class="kpi-row" id="kpiRow" style="display:none">
-    <div class="kpi"><div class="kpi-label">Produtos encontrados</div><div class="kpi-value" id="kpiTotal">—</div><div class="kpi-sub" id="kpiSubTotal"></div></div>
-    <div class="kpi"><div class="kpi-label">Laboratórios</div><div class="kpi-value" id="kpiLabs">—</div></div>
-    <div class="kpi highlight"><div class="kpi-label">Menor preço</div><div class="kpi-value" id="kpiMin">—</div><div class="kpi-sub" id="kpiMinSub"></div></div>
-    <div class="kpi danger"><div class="kpi-label">Maior preço</div><div class="kpi-value" id="kpiMax">—</div><div class="kpi-sub" id="kpiMaxSub"></div></div>
-    <div class="kpi"><div class="kpi-label">Preço médio</div><div class="kpi-value" id="kpiAvg">—</div></div>
-  </div>
+    <!-- ABA: SUBSTÂNCIA -->
+    <div id="tabSubstancia" style="display:none">
+      <!-- KPIs -->
+      <div class="kpi-grid" id="kpiRow">
+        <div class="kpi"><div class="kpi-label">Produtos encontrados</div><div class="kpi-value" id="kpiTotal">—</div><div class="kpi-sub" id="kpiSubTotal"></div></div>
+        <div class="kpi"><div class="kpi-label">Laboratórios</div><div class="kpi-value" id="kpiLabs">—</div></div>
+        <div class="kpi highlight"><div class="kpi-label">Menor preço</div><div class="kpi-value" id="kpiMin">—</div><div class="kpi-sub" id="kpiMinSub"></div></div>
+        <div class="kpi danger"><div class="kpi-label">Maior preço</div><div class="kpi-value" id="kpiMax">—</div><div class="kpi-sub" id="kpiMaxSub"></div></div>
+        <div class="kpi"><div class="kpi-label">Preço médio</div><div class="kpi-value" id="kpiAvg">—</div></div>
+        <div class="kpi warn"><div class="kpi-label">Diferença %</div><div class="kpi-value" id="kpiDiff">—</div><div class="kpi-sub">entre min e max</div></div>
+      </div>
 
-  <!-- WINNER -->
-  <div id="winnerBanner">
-    <span class="winner-badge">🏆 MAIS BARATO</span>
-    <div class="winner-info">
-      <div class="winner-name" id="winnerName">—</div>
-      <div class="winner-detail" id="winnerDetail">—</div>
-    </div>
-    <div class="winner-price" id="winnerPrice">—</div>
-  </div>
+      <!-- WINNER -->
+      <div id="winnerBanner">
+        <span class="winner-badge">🏆 MAIS BARATO</span>
+        <div class="winner-info">
+          <div class="winner-name" id="winnerName">—</div>
+          <div class="winner-detail" id="winnerDetail">—</div>
+        </div>
+        <div class="winner-price" id="winnerPrice">—</div>
+      </div>
 
-  <!-- EMPTY STATE (após carregar, antes de selecionar substância) -->
-  <div id="emptyState" style="display:none">
-    <div class="big-icon">💊</div>
-    <h2>Nenhuma substância selecionada</h2>
-    <p>Use o campo acima para buscar e selecionar uma substância ativa.</p>
-  </div>
+      <!-- EMPTY STATE -->
+      <div class="empty-state" id="emptyState" style="display:none">
+        <div class="big-icon">💊</div>
+        <h2>Nenhuma substância selecionada</h2>
+        <p>Use o campo ao lado para buscar uma substância ativa.</p>
+      </div>
 
-  <!-- CONTENT -->
-  <div class="content-grid" id="contentGrid" style="display:none">
-    <div class="panel">
-      <div class="panel-header">Tabela Comparativa <span class="panel-count" id="tableCount">0 itens</span></div>
-      <div class="table-wrap">
-        <table>
-          <thead>
-            <tr>
-              <th onclick="sortTable('LABORATORIO')" id="th-LABORATORIO">Laboratório <span class="sort-arrow">↕</span></th>
-              <th onclick="sortTable('PRODUTO')" id="th-PRODUTO">Produto <span class="sort-arrow">↕</span></th>
-              <th onclick="sortTable('APRESENTACAO')" id="th-APRESENTACAO">Apresentação <span class="sort-arrow">↕</span></th>
-              <th onclick="sortTable('TIPO_PRODUTO')" id="th-TIPO_PRODUTO">Tipo <span class="sort-arrow">↕</span></th>
-              <th onclick="sortTable('PRECO')" id="th-PRECO">Preço <span class="sort-arrow">↕</span></th>
-            </tr>
-          </thead>
-          <tbody id="tableBody"></tbody>
-        </table>
+      <!-- TABELA + GRÁFICO -->
+      <div id="contentGrid" style="display:none">
+        <div class="two-col">
+          <div class="panel">
+            <div class="panel-header">
+              <div class="panel-header-left">Tabela Comparativa <span class="panel-count" id="tableCount">0 itens</span></div>
+            </div>
+            <div class="table-wrap">
+              <table>
+                <thead>
+                  <tr>
+                    <th onclick="sortTable('LABORATORIO')" id="th-LABORATORIO">Laboratório <span class="sort-arrow">↕</span></th>
+                    <th onclick="sortTable('PRODUTO')" id="th-PRODUTO">Produto <span class="sort-arrow">↕</span></th>
+                    <th onclick="sortTable('APRESENTACAO')" id="th-APRESENTACAO">Apresentação <span class="sort-arrow">↕</span></th>
+                    <th onclick="sortTable('TIPO_PRODUTO')" id="th-TIPO_PRODUTO">Tipo <span class="sort-arrow">↕</span></th>
+                    <th onclick="sortTable('PRECO')" id="th-PRECO">Preço <span class="sort-arrow">↕</span></th>
+                  </tr>
+                </thead>
+                <tbody id="tableBody"></tbody>
+              </table>
+            </div>
+          </div>
+          <div class="panel">
+            <div class="panel-header">Gráfico de Preços <span class="panel-count" id="chartCount">por produto</span></div>
+            <div class="chart-wrap"><canvas id="barChart"></canvas></div>
+          </div>
+        </div>
       </div>
     </div>
-    <div class="panel">
-      <div class="panel-header">Gráfico de Preços <span class="panel-count" id="chartCount">por produto</span></div>
-      <div class="chart-wrap"><canvas id="barChart"></canvas></div>
+
+    <!-- ABA: LABORATÓRIO -->
+    <div id="tabLaboratorio" style="display:none">
+      <div class="empty-state" id="emptyStateLab">
+        <div class="big-icon">🏭</div>
+        <h2>Nenhum laboratório selecionado</h2>
+        <p>Use o campo ao lado para buscar um laboratório.</p>
+      </div>
+      <div id="labContent" style="display:none">
+        <div class="kpi-grid" id="labKpiRow">
+          <div class="kpi"><div class="kpi-label">Produtos</div><div class="kpi-value" id="labKpiTotal">—</div></div>
+          <div class="kpi purple"><div class="kpi-label">Substâncias</div><div class="kpi-value" id="labKpiSubs">—</div></div>
+          <div class="kpi highlight"><div class="kpi-label">Menor preço</div><div class="kpi-value" id="labKpiMin">—</div></div>
+          <div class="kpi danger"><div class="kpi-label">Maior preço</div><div class="kpi-value" id="labKpiMax">—</div></div>
+          <div class="kpi"><div class="kpi-label">Preço médio</div><div class="kpi-value" id="labKpiAvg">—</div></div>
+        </div>
+        <div class="panel">
+          <div class="panel-header">
+            <div class="panel-header-left">Produtos do Laboratório <span class="panel-count" id="labTableCount">0</span></div>
+            <div class="panel-actions">
+              <input type="text" class="search-input" style="width:200px;padding:6px 10px;" placeholder="Filtrar…" id="labTableSearch" oninput="filterLabTable(this.value)">
+            </div>
+          </div>
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th>Substância</th>
+                  <th>Produto</th>
+                  <th>Apresentação</th>
+                  <th>Tipo</th>
+                  <th>Regime</th>
+                  <th style="text-align:right">Preço</th>
+                </tr>
+              </thead>
+              <tbody id="labTableBody"></tbody>
+            </table>
+          </div>
+        </div>
+        <div class="panel">
+          <div class="panel-header">Distribuição por Substância</div>
+          <div class="chart-wrap"><canvas id="labChart" style="max-height:320px"></canvas></div>
+        </div>
+      </div>
     </div>
-  </div>
-</main>
+
+    <!-- ABA: COMPARADOR AVANÇADO -->
+    <div id="tabComparador" style="display:none">
+      <div class="empty-state" id="emptyStateComp">
+        <div class="big-icon">⚖️</div>
+        <h2>Configure o comparador</h2>
+        <p>Selecione substâncias e laboratórios ao lado e clique em Comparar.</p>
+      </div>
+      <div id="comparadorContent" style="display:none">
+        <div class="panel">
+          <div class="panel-header">Matriz de Comparação de Preços</div>
+          <div class="table-wrap">
+            <table>
+              <thead id="compMatrizHead"></thead>
+              <tbody id="compMatrizBody"></tbody>
+            </table>
+          </div>
+        </div>
+        <div class="two-col" style="margin-top:0">
+          <div class="panel">
+            <div class="panel-header">Ranking de Laboratórios (preço médio)</div>
+            <div class="chart-wrap"><canvas id="compRankChart" style="max-height:300px"></canvas></div>
+          </div>
+          <div class="panel">
+            <div class="panel-header">Amplitude de Preços por Substância</div>
+            <div class="chart-wrap"><canvas id="compAmplChart" style="max-height:300px"></canvas></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ABA: EXECUTIVO -->
+    <div id="tabExecutivo" style="display:none">
+      <div class="empty-state" id="emptyStateExec" style="display:none">
+        <div class="big-icon">📊</div>
+        <h2>Sem dados</h2>
+        <p>Carregue a planilha para ver a visão executiva.</p>
+      </div>
+      <div id="execContent">
+        <div class="kpi-grid" id="execKpiRow">
+          <div class="kpi purple"><div class="kpi-label">Total de substâncias</div><div class="kpi-value" id="execKpiSubs">—</div></div>
+          <div class="kpi"><div class="kpi-label">Total de laboratórios</div><div class="kpi-value" id="execKpiLabs">—</div></div>
+          <div class="kpi"><div class="kpi-label">Total de produtos</div><div class="kpi-value" id="execKpiProds">—</div></div>
+          <div class="kpi highlight"><div class="kpi-label">Preço médio geral</div><div class="kpi-value" id="execKpiAvg">—</div></div>
+          <div class="kpi highlight"><div class="kpi-label">Lab. mais barato (avg)</div><div class="kpi-value" id="execLabMin">—</div><div class="kpi-sub" id="execLabMinVal"></div></div>
+          <div class="kpi danger"><div class="kpi-label">Lab. mais caro (avg)</div><div class="kpi-value" id="execLabMax">—</div><div class="kpi-sub" id="execLabMaxVal"></div></div>
+          <div class="kpi warn"><div class="kpi-label">+ concorrentes</div><div class="kpi-value" id="execMostComp">—</div><div class="kpi-sub" id="execMostCompVal"></div></div>
+        </div>
+
+        <div class="two-col">
+          <div class="panel">
+            <div class="panel-header">Ranking de Laboratórios por Preço Médio</div>
+            <div class="chart-wrap"><canvas id="execRankChart" style="max-height:360px"></canvas></div>
+          </div>
+          <div class="panel">
+            <div class="panel-header">Top 10 Substâncias com Mais Laboratórios</div>
+            <div class="chart-wrap"><canvas id="execTop10Chart" style="max-height:360px"></canvas></div>
+          </div>
+        </div>
+
+        <div class="two-col">
+          <div class="panel">
+            <div class="panel-header">Distribuição por Tipo de Produto</div>
+            <div class="chart-wrap" style="display:flex;justify-content:center"><canvas id="execTipoChart" style="max-height:280px;max-width:280px"></canvas></div>
+          </div>
+          <div class="panel">
+            <div class="panel-header">Preço Médio por Regime</div>
+            <div class="chart-wrap"><canvas id="execRegimeChart" style="max-height:280px"></canvas></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div><!-- /mainContent -->
+</div><!-- /app-body -->
 
 <script>
-let substanceMap = {};
+// ==================== STATE ====================
+let substanceMap = {};    // substancia -> [records]
 let allSubstances = [];
+let allLabs = [];
+let allRecords = [];
+
 let currentSubstance = null;
 let currentTipo = '';
+let currentApres = new Set();
 let sortKey = 'PRECO';
 let sortDir = 1;
 let chartInstance = null;
 
-// --- TOAST ---
-function showToast(msg, type = '') {
+let currentLab = null;
+let labChartInstance = null;
+let labTableData = [];
+
+let compSelectedSubs = new Set();
+let compSelectedLabs = new Set();
+let compChartRank = null;
+let compChartAmpl = null;
+
+let execCharts = {};
+
+let currentTab = 'substancia';
+
+// ==================== TOAST ====================
+function showToast(msg, type='') {
   const t = document.getElementById('toast');
   t.textContent = msg;
   t.className = 'show ' + type;
@@ -265,59 +582,10 @@ function showToast(msg, type = '') {
   t._timer = setTimeout(() => t.className = '', 3000);
 }
 
-// --- FILE READING ---
-function handleFile(file) {
-  if (!file) return;
-  if (!file.name.match(/\.xlsx?$/i)) {
-    showToast('❌ Formato inválido. Use um arquivo .xlsx', 'error');
-    return;
-  }
-  showToast('⏳ Lendo planilha…');
-  const reader = new FileReader();
-  reader.onload = e => {
-    try {
-      const wb = XLSX.read(e.target.result, { type: 'array' });
-
-      // Tenta achar a aba "FILTRADO DASH", senão usa a primeira
-      const sheetName = wb.SheetNames.includes('FILTRADO DASH')
-        ? 'FILTRADO DASH'
-        : wb.SheetNames[0];
-
-      const ws = wb.Sheets[sheetName];
-      const raw = XLSX.utils.sheet_to_json(ws, { defval: '' });
-
-      if (!raw.length) {
-        showToast('❌ Planilha vazia ou sem dados reconhecíveis.', 'error');
-        return;
-      }
-
-      // Mapeia colunas flexivelmente (aceita variações de acento/maiúscula)
-      const colMap = buildColMap(Object.keys(raw[0]));
-      const records = raw.map(row => ({
-        SUBSTANCIA:   String(row[colMap.SUBSTANCIA]  || '').trim(),
-        LABORATORIO:  String(row[colMap.LABORATORIO] || '').trim(),
-        EAN1:         String(row[colMap.EAN1]        || '').trim(),
-        PRODUTO:      String(row[colMap.PRODUTO]     || '').trim(),
-        APRESENTACAO: String(row[colMap.APRESENTACAO]|| '').trim(),
-        TIPO_PRODUTO: String(row[colMap.TIPO_PRODUTO]|| '').trim(),
-        REGIME_PRECO: String(row[colMap.REGIME_PRECO]|| '').trim(),
-        PRECO:        row[colMap.PRECO],
-      })).filter(r => r.SUBSTANCIA);
-
-      loadData(records, file.name, sheetName);
-    } catch(err) {
-      showToast('❌ Erro ao ler o arquivo: ' + err.message, 'error');
-    }
-  };
-  reader.readAsArrayBuffer(file);
-}
-
+// ==================== HELPERS ====================
 function normalize(s) {
-  return String(s).toUpperCase()
-    .normalize('NFD').replace(/[\u0300-\u036f]/g, '')
-    .replace(/[^A-Z0-9]/g, '');
+  return String(s).toUpperCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/[^A-Z0-9]/g,'');
 }
-
 function buildColMap(keys) {
   const targets = {
     SUBSTANCIA:   ['SUBSTANCIA','SUBSTÂNCIA'],
@@ -326,123 +594,16 @@ function buildColMap(keys) {
     PRODUTO:      ['PRODUTO'],
     APRESENTACAO: ['APRESENTACAO','APRESENTAÇÃO'],
     TIPO_PRODUTO: ['TIPOPRODUTO','TIPO_PRODUTO'],
-    REGIME_PRECO: ['REGIMEDEPRECO','REGIME_PRECO','REGIMEDEPRE'],
+    REGIME_PRECO: ['REGIMEDEPRECO','REGIME_PRECO','REGIMEDEPRE','REGIMEDEPREÇO'],
     PRECO:        ['PRECO','PREÇO'],
   };
   const map = {};
   for (const [field, variants] of Object.entries(targets)) {
-    map[field] = keys.find(k => variants.includes(normalize(k))) || keys.find(k => normalize(k).includes(normalize(field.split('_')[0]))) || '';
+    map[field] = keys.find(k => variants.includes(normalize(k)))
+      || keys.find(k => normalize(k).includes(normalize(field.split('_')[0]))) || '';
   }
   return map;
 }
-
-function loadData(records, fileName, sheetName) {
-  substanceMap = {};
-  records.forEach(r => {
-    if (!substanceMap[r.SUBSTANCIA]) substanceMap[r.SUBSTANCIA] = [];
-    substanceMap[r.SUBSTANCIA].push(r);
-  });
-  allSubstances = Object.keys(substanceMap).sort();
-
-  // UI: esconde upload area, mostra filtro
-  document.getElementById('uploadArea').style.display = 'none';
-  document.getElementById('filterCard').style.display = '';
-  document.getElementById('emptyState').style.display = 'block';
-  document.getElementById('substanciaInput').disabled = false;
-
-  // Reset busca
-  currentSubstance = null;
-  document.getElementById('substanciaInput').value = '';
-  document.getElementById('kpiRow').style.display = 'none';
-  document.getElementById('winnerBanner').style.display = 'none';
-  document.getElementById('contentGrid').style.display = 'none';
-
-  document.getElementById('headerSubtitle').textContent =
-    `${fileName} · aba "${sheetName}" · ${records.length.toLocaleString('pt-BR')} produtos · ${allSubstances.length.toLocaleString('pt-BR')} substâncias`;
-
-  showToast(`✅ ${records.length.toLocaleString('pt-BR')} produtos carregados`, 'success');
-}
-
-// --- FILE INPUT LISTENERS ---
-['fileInputMain','fileInputHeader'].forEach(id => {
-  document.getElementById(id).addEventListener('change', e => handleFile(e.target.files[0]));
-});
-
-// Drag & drop
-const uploadArea = document.getElementById('uploadArea');
-uploadArea.addEventListener('dragover', e => { e.preventDefault(); uploadArea.classList.add('drag'); });
-uploadArea.addEventListener('dragleave', () => uploadArea.classList.remove('drag'));
-uploadArea.addEventListener('drop', e => { e.preventDefault(); uploadArea.classList.remove('drag'); handleFile(e.dataTransfer.files[0]); });
-uploadArea.addEventListener('click', e => { if (!e.target.closest('label')) document.getElementById('fileInputMain').click(); });
-
-// --- AUTOCOMPLETE ---
-const input = document.getElementById('substanciaInput');
-const dropdown = document.getElementById('dropdown');
-
-input.addEventListener('input', () => {
-  const q = input.value.trim().toUpperCase();
-  if (!q) { dropdown.classList.remove('open'); return; }
-  const matches = allSubstances.filter(s => s.includes(q)).slice(0, 40);
-  if (!matches.length) { dropdown.classList.remove('open'); return; }
-  const re = new RegExp(q.replace(/[.*+?^${}()|[\]\\]/g,'\\$&'), 'g');
-  dropdown.innerHTML = matches.map(s =>
-    `<div class="drop-item" data-val="${s}">${s.replace(re, m => `<mark>${m}</mark>`)}</div>`
-  ).join('');
-  dropdown.classList.add('open');
-});
-
-dropdown.addEventListener('click', e => {
-  const item = e.target.closest('.drop-item');
-  if (!item) return;
-  input.value = item.dataset.val;
-  dropdown.classList.remove('open');
-  selectSubstance(item.dataset.val);
-});
-
-document.addEventListener('click', e => {
-  if (!e.target.closest('.search-wrap')) dropdown.classList.remove('open');
-});
-
-input.addEventListener('keydown', e => {
-  if (e.key === 'Enter') {
-    const first = dropdown.querySelector('.drop-item');
-    if (first) { input.value = first.dataset.val; dropdown.classList.remove('open'); selectSubstance(first.dataset.val); }
-  }
-});
-
-// --- CHIPS ---
-document.getElementById('chipRow').addEventListener('click', e => {
-  const chip = e.target.closest('.chip');
-  if (!chip) return;
-  document.querySelectorAll('.chip').forEach(c => c.classList.remove('active'));
-  chip.classList.add('active');
-  currentTipo = chip.dataset.tipo;
-  if (currentSubstance) renderData();
-});
-
-// --- SORT ---
-function sortTable(key) {
-  if (sortKey === key) sortDir *= -1;
-  else { sortKey = key; sortDir = 1; }
-  document.querySelectorAll('thead th').forEach(th => { th.classList.remove('sorted'); th.querySelector('.sort-arrow').textContent = '↕'; });
-  const th = document.getElementById('th-' + key);
-  th.classList.add('sorted');
-  th.querySelector('.sort-arrow').textContent = sortDir === 1 ? '↑' : '↓';
-  if (currentSubstance) renderData();
-}
-
-// --- SELECT SUBSTANCE ---
-function selectSubstance(name) {
-  currentSubstance = name;
-  sortKey = 'PRECO'; sortDir = 1;
-  document.querySelectorAll('thead th').forEach(th => { th.classList.remove('sorted'); th.querySelector('.sort-arrow').textContent = '↕'; });
-  const th = document.getElementById('th-PRECO');
-  th.classList.add('sorted');
-  th.querySelector('.sort-arrow').textContent = '↑';
-  renderData();
-}
-
-// --- HELPERS ---
 function formatPrice(v) {
   if (v === null || v === undefined || v === '') return null;
   const n = parseFloat(v);
@@ -451,20 +612,239 @@ function formatPrice(v) {
 function fmtBRL(v) {
   return new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(v);
 }
+function pct(a,b) {
+  if (!b) return 0;
+  return ((a-b)/b*100);
+}
 
-// --- RENDER ---
-function renderData() {
+// ==================== FILE READING ====================
+function handleFile(file) {
+  if (!file) return;
+  if (!file.name.match(/\.xlsx?$/i)) { showToast('❌ Use um arquivo .xlsx', 'error'); return; }
+  showToast('⏳ Lendo planilha…');
+  const reader = new FileReader();
+  reader.onload = e => {
+    try {
+      const wb = XLSX.read(e.target.result, { type: 'array' });
+      const sheetName = wb.SheetNames.includes('FILTRADO DASH') ? 'FILTRADO DASH' : wb.SheetNames[0];
+      const ws = wb.Sheets[sheetName];
+      const raw = XLSX.utils.sheet_to_json(ws, { defval: '' });
+      if (!raw.length) { showToast('❌ Planilha vazia.', 'error'); return; }
+      const colMap = buildColMap(Object.keys(raw[0]));
+      const records = raw.map(row => ({
+        SUBSTANCIA:   String(row[colMap.SUBSTANCIA]   || '').trim(),
+        LABORATORIO:  String(row[colMap.LABORATORIO]  || '').trim(),
+        EAN1:         String(row[colMap.EAN1]         || '').trim(),
+        PRODUTO:      String(row[colMap.PRODUTO]      || '').trim(),
+        APRESENTACAO: String(row[colMap.APRESENTACAO] || '').trim(),
+        TIPO_PRODUTO: String(row[colMap.TIPO_PRODUTO] || '').trim(),
+        REGIME_PRECO: String(row[colMap.REGIME_PRECO] || '').trim(),
+        PRECO:        row[colMap.PRECO],
+      })).filter(r => r.SUBSTANCIA);
+      loadData(records, file.name, sheetName);
+    } catch(err) { showToast('❌ Erro: ' + err.message, 'error'); }
+  };
+  reader.readAsArrayBuffer(file);
+}
+
+function loadData(records, fileName, sheetName) {
+  allRecords = records;
+  substanceMap = {};
+  records.forEach(r => {
+    if (!substanceMap[r.SUBSTANCIA]) substanceMap[r.SUBSTANCIA] = [];
+    substanceMap[r.SUBSTANCIA].push(r);
+  });
+  allSubstances = Object.keys(substanceMap).sort();
+  allLabs = [...new Set(records.map(r => r.LABORATORIO))].filter(Boolean).sort();
+
+  document.getElementById('uploadArea').style.display = 'none';
+  document.getElementById('navTabs').style.display = '';
+  document.getElementById('substanciaInput').disabled = false;
+  document.getElementById('labInput').disabled = false;
+
+  // Reset
+  currentSubstance = null;
+  currentLab = null;
+  document.getElementById('substanciaInput').value = '';
+  document.getElementById('labInput').value = '';
+  document.getElementById('tabSubstancia').style.display = '';
+  document.getElementById('tabLaboratorio').style.display = 'none';
+  document.getElementById('tabComparador').style.display = 'none';
+  document.getElementById('tabExecutivo').style.display = 'none';
+  document.getElementById('kpiRow').style.display = 'none';
+  document.getElementById('winnerBanner').style.display = 'none';
+  document.getElementById('contentGrid').style.display = 'none';
+  document.getElementById('emptyState').style.display = 'block';
+  document.getElementById('apresSection').style.display = 'none';
+
+  document.getElementById('headerSubtitle').textContent =
+    `${fileName} · "${sheetName}" · ${records.length.toLocaleString('pt-BR')} produtos · ${allSubstances.length.toLocaleString('pt-BR')} substâncias`;
+
+  // Populate comparador multi-selects
+  populateMsOptions('compSubs', allSubstances);
+  populateMsOptions('compLabs', allLabs);
+
+  renderExecutivo();
+  showToast(`✅ ${records.length.toLocaleString('pt-BR')} produtos carregados`, 'success');
+}
+
+['fileInputMain','fileInputHeader'].forEach(id => {
+  document.getElementById(id).addEventListener('change', e => handleFile(e.target.files[0]));
+});
+const uploadArea = document.getElementById('uploadArea');
+uploadArea.addEventListener('dragover', e => { e.preventDefault(); uploadArea.classList.add('drag'); });
+uploadArea.addEventListener('dragleave', () => uploadArea.classList.remove('drag'));
+uploadArea.addEventListener('drop', e => { e.preventDefault(); uploadArea.classList.remove('drag'); handleFile(e.dataTransfer.files[0]); });
+uploadArea.addEventListener('click', e => { if (!e.target.closest('label')) document.getElementById('fileInputMain').click(); });
+
+// ==================== TABS ====================
+function switchTab(tab) {
+  currentTab = tab;
+  document.querySelectorAll('.nav-tab').forEach(t => t.classList.toggle('active', t.dataset.tab === tab));
+  document.getElementById('tabSubstancia').style.display = tab === 'substancia' ? '' : 'none';
+  document.getElementById('tabLaboratorio').style.display = tab === 'laboratorio' ? '' : 'none';
+  document.getElementById('tabComparador').style.display = tab === 'comparador' ? '' : 'none';
+  document.getElementById('tabExecutivo').style.display = tab === 'executivo' ? '' : 'none';
+  document.getElementById('sidebarSubstancia').style.display = tab === 'substancia' ? '' : 'none';
+  document.getElementById('sidebarLaboratorio').style.display = tab === 'laboratorio' ? '' : 'none';
+  document.getElementById('sidebarComparador').style.display = tab === 'comparador' ? '' : 'none';
+}
+
+// ==================== SIDEBAR ====================
+function toggleSidebar() {
+  document.getElementById('sidebar').classList.toggle('collapsed');
+}
+
+// ==================== SUBSTÂNCIA AUTOCOMPLETE ====================
+const substInput = document.getElementById('substanciaInput');
+const substDrop = document.getElementById('substanciaDropdown');
+
+substInput.addEventListener('input', () => {
+  const q = substInput.value.trim().toUpperCase();
+  if (!q) { substDrop.classList.remove('open'); return; }
+  const matches = allSubstances.filter(s => s.toUpperCase().includes(q)).slice(0, 40);
+  if (!matches.length) { substDrop.classList.remove('open'); return; }
+  const re = new RegExp(q.replace(/[.*+?^${}()|[\]\\]/g,'\\$&'), 'gi');
+  substDrop.innerHTML = matches.map(s =>
+    `<div class="drop-item" data-val="${s}">${s.replace(re, m => `<mark>${m}</mark>`)}</div>`
+  ).join('');
+  substDrop.classList.add('open');
+});
+substDrop.addEventListener('click', e => {
+  const item = e.target.closest('.drop-item');
+  if (!item) return;
+  substInput.value = item.dataset.val;
+  substDrop.classList.remove('open');
+  selectSubstance(item.dataset.val);
+});
+substInput.addEventListener('keydown', e => {
+  if (e.key === 'Enter') {
+    const first = substDrop.querySelector('.drop-item');
+    if (first) { substInput.value = first.dataset.val; substDrop.classList.remove('open'); selectSubstance(first.dataset.val); }
+  }
+});
+
+// ==================== LAB AUTOCOMPLETE ====================
+const labInput = document.getElementById('labInput');
+const labDrop = document.getElementById('labDropdown');
+
+labInput.addEventListener('input', () => {
+  const q = labInput.value.trim().toUpperCase();
+  if (!q) { labDrop.classList.remove('open'); return; }
+  const matches = allLabs.filter(l => l.toUpperCase().includes(q)).slice(0, 30);
+  if (!matches.length) { labDrop.classList.remove('open'); return; }
+  const re = new RegExp(q.replace(/[.*+?^${}()|[\]\\]/g,'\\$&'), 'gi');
+  labDrop.innerHTML = matches.map(l =>
+    `<div class="drop-item" data-val="${l}">${l.replace(re, m => `<mark>${m}</mark>`)}</div>`
+  ).join('');
+  labDrop.classList.add('open');
+});
+labDrop.addEventListener('click', e => {
+  const item = e.target.closest('.drop-item');
+  if (!item) return;
+  labInput.value = item.dataset.val;
+  labDrop.classList.remove('open');
+  selectLab(item.dataset.val);
+});
+labInput.addEventListener('keydown', e => {
+  if (e.key === 'Enter') {
+    const first = labDrop.querySelector('.drop-item');
+    if (first) { labInput.value = first.dataset.val; labDrop.classList.remove('open'); selectLab(first.dataset.val); }
+  }
+});
+
+document.addEventListener('click', e => {
+  if (!e.target.closest('.search-wrap')) {
+    substDrop.classList.remove('open');
+    labDrop.classList.remove('open');
+  }
+  if (!e.target.closest('.ms-wrap')) {
+    document.querySelectorAll('.ms-dropdown').forEach(d => d.classList.remove('open'));
+  }
+});
+
+// ==================== CHIPS (tipo) ====================
+document.getElementById('chipRow').addEventListener('click', e => {
+  const chip = e.target.closest('.chip');
+  if (!chip) return;
+  document.querySelectorAll('#chipRow .chip').forEach(c => c.classList.remove('active'));
+  chip.classList.add('active');
+  currentTipo = chip.dataset.tipo;
+  if (currentSubstance) renderSubstancia();
+});
+
+// ==================== SELECT SUBSTANCE ====================
+function selectSubstance(name) {
+  currentSubstance = name;
+  currentApres = new Set();
+  sortKey = 'PRECO'; sortDir = 1;
+  document.querySelectorAll('thead th').forEach(th => { th.classList.remove('sorted'); if(th.querySelector('.sort-arrow')) th.querySelector('.sort-arrow').textContent = '↕'; });
+  const th = document.getElementById('th-PRECO');
+  if(th) { th.classList.add('sorted'); th.querySelector('.sort-arrow').textContent = '↑'; }
+
+  // Build apresentação chips
+  const rows = substanceMap[name] || [];
+  const apresSet = [...new Set(rows.map(r => r.APRESENTACAO).filter(Boolean))].sort();
+  const apresFilter = document.getElementById('apresFilter');
+  const apresSection = document.getElementById('apresSection');
+  if (apresSet.length > 1) {
+    apresFilter.innerHTML = apresSet.map(a =>
+      `<div class="apres-chip" data-apres="${a}" onclick="toggleApres('${a.replace(/'/g,"\\'")}',this)">${a}</div>`
+    ).join('');
+    apresSection.style.display = '';
+  } else {
+    apresSection.style.display = 'none';
+  }
+  renderSubstancia();
+}
+
+function toggleApres(name, el) {
+  if (currentApres.has(name)) { currentApres.delete(name); el.classList.remove('active'); }
+  else { currentApres.add(name); el.classList.add('active'); }
+  renderSubstancia();
+}
+
+// ==================== SORT ====================
+function sortTable(key) {
+  if (sortKey === key) sortDir *= -1; else { sortKey = key; sortDir = 1; }
+  document.querySelectorAll('thead th').forEach(th => { th.classList.remove('sorted'); if(th.querySelector('.sort-arrow')) th.querySelector('.sort-arrow').textContent = '↕'; });
+  const th = document.getElementById('th-' + key);
+  if(th) { th.classList.add('sorted'); th.querySelector('.sort-arrow').textContent = sortDir === 1 ? '↑' : '↓'; }
+  if (currentSubstance) renderSubstancia();
+}
+
+// ==================== RENDER SUBSTÂNCIA ====================
+function renderSubstancia() {
   const rows = substanceMap[currentSubstance] || [];
-  const filtered = currentTipo ? rows.filter(r => r.TIPO_PRODUTO === currentTipo) : rows;
+  let filtered = currentTipo ? rows.filter(r => r.TIPO_PRODUTO === currentTipo) : rows;
+  if (currentApres.size > 0) filtered = filtered.filter(r => currentApres.has(r.APRESENTACAO));
 
   document.getElementById('emptyState').style.display = 'none';
   document.getElementById('kpiRow').style.display = '';
   document.getElementById('contentGrid').style.display = '';
 
-  const sorted = [...filtered].sort((a, b) => {
-    if (sortKey === 'PRECO') {
-      return ((formatPrice(a.PRECO) ?? Infinity) - (formatPrice(b.PRECO) ?? Infinity)) * sortDir;
-    }
+  const sorted = [...filtered].sort((a,b) => {
+    if (sortKey === 'PRECO') return ((formatPrice(a.PRECO)??Infinity) - (formatPrice(b.PRECO)??Infinity)) * sortDir;
     return String(a[sortKey]).localeCompare(String(b[sortKey]), 'pt-BR') * sortDir;
   });
 
@@ -473,38 +853,39 @@ function renderData() {
   const minPrice = prices.length ? Math.min(...prices) : null;
   const maxPrice = prices.length ? Math.max(...prices) : null;
   const avgPrice = prices.length ? prices.reduce((a,b)=>a+b,0)/prices.length : null;
+  const diffPct  = (minPrice !== null && maxPrice !== null && minPrice > 0) ? ((maxPrice-minPrice)/minPrice*100) : null;
 
   document.getElementById('kpiTotal').textContent = filtered.length;
   document.getElementById('kpiSubTotal').textContent = rows.length + ' no total';
-  document.getElementById('kpiLabs').textContent = new Set(filtered.map(r => r.LABORATORIO)).size;
+  document.getElementById('kpiLabs').textContent = new Set(filtered.map(r=>r.LABORATORIO)).size;
   document.getElementById('kpiMin').textContent = minPrice !== null ? fmtBRL(minPrice) : '—';
   document.getElementById('kpiMax').textContent = maxPrice !== null ? fmtBRL(maxPrice) : '—';
   document.getElementById('kpiAvg').textContent = avgPrice !== null ? fmtBRL(avgPrice) : '—';
+  document.getElementById('kpiDiff').textContent = diffPct !== null ? diffPct.toFixed(1) + '%' : '—';
   if (minPrice !== null) {
-    document.getElementById('kpiMinSub').textContent = (priced.find(r => formatPrice(r.PRECO) === minPrice) || {}).LABORATORIO || '';
-    document.getElementById('kpiMaxSub').textContent = (priced.find(r => formatPrice(r.PRECO) === maxPrice) || {}).LABORATORIO || '';
+    document.getElementById('kpiMinSub').textContent = (priced.find(r=>formatPrice(r.PRECO)===minPrice)||{}).LABORATORIO||'';
+    document.getElementById('kpiMaxSub').textContent = (priced.find(r=>formatPrice(r.PRECO)===maxPrice)||{}).LABORATORIO||'';
   }
 
   const banner = document.getElementById('winnerBanner');
   if (minPrice !== null) {
-    const winner = priced.find(r => formatPrice(r.PRECO) === minPrice);
+    const winner = priced.find(r=>formatPrice(r.PRECO)===minPrice);
     banner.style.display = 'flex';
     document.getElementById('winnerName').textContent = winner.LABORATORIO;
     document.getElementById('winnerDetail').textContent = winner.PRODUTO + ' · ' + winner.APRESENTACAO + ' · ' + winner.TIPO_PRODUTO;
     document.getElementById('winnerPrice').textContent = fmtBRL(minPrice);
-  } else {
-    banner.style.display = 'none';
-  }
+  } else { banner.style.display = 'none'; }
 
   document.getElementById('tableCount').textContent = sorted.length + ' itens';
   document.getElementById('tableBody').innerHTML = sorted.map(r => {
     const p = formatPrice(r.PRECO);
     const isCheapest = p !== null && p === minPrice;
-    const tipoClass = ['GENÉRICO','SIMILAR','NOVO','BIOLÓGICO'].includes(r.TIPO_PRODUTO) ? 'tipo-' + r.TIPO_PRODUTO : 'tipo-default';
+    const isPriciest = p !== null && p === maxPrice && maxPrice !== minPrice;
+    const tipoClass = ['GENÉRICO','GENERICO','SIMILAR','NOVO','BIOLÓGICO','BIOLOGICO'].includes(r.TIPO_PRODUTO) ? 'tipo-'+r.TIPO_PRODUTO : 'tipo-default';
     const priceCell = p === null
-      ? `<span class="td-price" style="color:var(--muted);font-style:italic;font-size:12px;font-weight:400">sem preço</span>`
-      : `<span class="td-price ${isCheapest?'price-min':''}">${fmtBRL(p)}${isCheapest?'<span class="price-star">★</span>':''}</span>`;
-    return `<tr class="${isCheapest?'cheapest':''}">
+      ? `<span class="td-price" style="color:var(--muted);font-style:italic;font-size:11px;font-weight:400">sem preço</span>`
+      : `<span class="td-price ${isCheapest?'price-min':isPriciest?'price-max':''}">${fmtBRL(p)}${isCheapest?'<span class="price-star">★</span>':''}</span>`;
+    return `<tr class="${isCheapest?'cheapest':isPriciest?'priciest':''}">
       <td><div class="td-lab">${r.LABORATORIO}</div></td>
       <td><div class="td-produto">${r.PRODUTO}</div></td>
       <td><div class="td-apres">${r.APRESENTACAO}</div></td>
@@ -513,59 +894,481 @@ function renderData() {
     </tr>`;
   }).join('');
 
-  renderChart(sorted, minPrice);
+  renderSubstanciaChart(sorted, minPrice);
 }
 
-function renderChart(rows, minPrice) {
-  // Agrupar por laboratório e pegar o MAIOR preço de cada um
+function renderSubstanciaChart(rows, minPrice) {
   const labMap = {};
   rows.forEach(r => {
     const p = formatPrice(r.PRECO);
     if (p === null) return;
-    const lab = r.LABORATORIO;
-    if (!labMap[lab] || p > labMap[lab]) labMap[lab] = p;
+    if (!labMap[r.LABORATORIO] || p > labMap[r.LABORATORIO]) labMap[r.LABORATORIO] = p;
   });
-
-  // Ordenar do maior para o menor e limitar a 25
-  const grouped = Object.entries(labMap)
-    .sort((a, b) => b[1] - a[1])
-    .slice(0, 25);
-
-  document.getElementById('chartCount').textContent =
-    Object.keys(labMap).length > 25 ? 'top 25 laboratórios · preço máximo' : 'preço máximo por laboratório';
-
+  const grouped = Object.entries(labMap).sort((a,b)=>b[1]-a[1]).slice(0,25);
+  document.getElementById('chartCount').textContent = Object.keys(labMap).length > 25 ? 'top 25 · preço máximo' : 'preço máximo por laboratório';
   if (chartInstance) chartInstance.destroy();
   const canvas = document.getElementById('barChart');
-  canvas.style.height = Math.max(200, grouped.length * 38 + 60) + 'px';
-
-  // Menor máximo entre os laboratórios (o lab mais barato no seu teto)
-  const allMaxPrices = grouped.map(([,v]) => v);
-  const minOfMax = allMaxPrices.length ? Math.min(...allMaxPrices) : null;
-
+  canvas.style.height = Math.max(180, grouped.length*36+60)+'px';
+  const minOfMax = grouped.length ? Math.min(...grouped.map(([,v])=>v)) : null;
   chartInstance = new Chart(canvas.getContext('2d'), {
     type: 'bar',
     data: {
-      labels: grouped.map(([lab]) => lab.length > 26 ? lab.slice(0,26)+'…' : lab),
-      datasets: [{
-        label: 'Preço máximo (R$)',
-        data: grouped.map(([,v]) => v),
-        backgroundColor: grouped.map(([,v]) => v === minOfMax ? 'rgba(0,201,167,0.85)' : 'rgba(123,97,255,0.55)'),
-        borderColor: grouped.map(([,v]) => v === minOfMax ? '#00c9a7' : '#7b61ff'),
-        borderWidth: 1.5, borderRadius: 5
-      }]
+      labels: grouped.map(([lab])=>lab.length>26?lab.slice(0,26)+'…':lab),
+      datasets: [{ label: 'Preço máx (R$)', data: grouped.map(([,v])=>v),
+        backgroundColor: grouped.map(([,v])=>v===minOfMax?'rgba(0,201,167,0.85)':'rgba(123,97,255,0.55)'),
+        borderColor: grouped.map(([,v])=>v===minOfMax?'#00c9a7':'#7b61ff'),
+        borderWidth:1.5, borderRadius:4 }]
     },
-    options: {
-      indexAxis: 'y', responsive: true, maintainAspectRatio: false,
-      plugins: {
-        legend: { display: false },
-        tooltip: { callbacks: { label: ctx => ' Máx: ' + fmtBRL(ctx.parsed.x) } }
-      },
-      scales: {
-        x: { grid: { color: 'rgba(42,51,68,0.6)' }, ticks: { color: '#8b949e', font: { size: 11 }, callback: v => 'R$ ' + v.toLocaleString('pt-BR') } },
-        y: { grid: { display: false }, ticks: { color: '#e6edf3', font: { size: 11 } } }
-      }
+    options: { indexAxis:'y', responsive:true, maintainAspectRatio:false,
+      plugins:{ legend:{display:false}, tooltip:{callbacks:{label:ctx=>' '+fmtBRL(ctx.parsed.x)}} },
+      scales:{ x:{grid:{color:'rgba(42,51,68,0.6)'}, ticks:{color:'#8b949e',font:{size:10},callback:v=>'R$ '+v.toLocaleString('pt-BR')}},
+               y:{grid:{display:false},ticks:{color:'#e6edf3',font:{size:10}}} }
     }
   });
+}
+
+// ==================== CLEAR FILTERS ====================
+function clearFilters() {
+  currentSubstance = null;
+  currentTipo = '';
+  currentApres = new Set();
+  document.getElementById('substanciaInput').value = '';
+  document.querySelectorAll('#chipRow .chip').forEach(c => c.classList.toggle('active', c.dataset.tipo===''));
+  document.getElementById('apresFilter').innerHTML = '';
+  document.getElementById('apresSection').style.display = 'none';
+  document.getElementById('kpiRow').style.display = 'none';
+  document.getElementById('winnerBanner').style.display = 'none';
+  document.getElementById('contentGrid').style.display = 'none';
+  document.getElementById('emptyState').style.display = 'block';
+}
+
+// ==================== SELECT LAB ====================
+function selectLab(name) {
+  currentLab = name;
+  const rows = allRecords.filter(r => r.LABORATORIO === name);
+  labTableData = rows;
+  const priced = rows.filter(r=>formatPrice(r.PRECO)!==null);
+  const prices = priced.map(r=>formatPrice(r.PRECO));
+  const minP = prices.length ? Math.min(...prices) : null;
+  const maxP = prices.length ? Math.max(...prices) : null;
+  const avgP = prices.length ? prices.reduce((a,b)=>a+b,0)/prices.length : null;
+  const subs = new Set(rows.map(r=>r.SUBSTANCIA));
+
+  document.getElementById('emptyStateLab').style.display = 'none';
+  document.getElementById('labContent').style.display = '';
+  document.getElementById('labKpiTotal').textContent = rows.length;
+  document.getElementById('labKpiSubs').textContent = subs.size;
+  document.getElementById('labKpiMin').textContent = minP !== null ? fmtBRL(minP) : '—';
+  document.getElementById('labKpiMax').textContent = maxP !== null ? fmtBRL(maxP) : '—';
+  document.getElementById('labKpiAvg').textContent = avgP !== null ? fmtBRL(avgP) : '—';
+
+  renderLabTable(rows);
+
+  // Chart: top substâncias by count
+  const subCount = {};
+  rows.forEach(r => { subCount[r.SUBSTANCIA] = (subCount[r.SUBSTANCIA]||0)+1; });
+  const top = Object.entries(subCount).sort((a,b)=>b[1]-a[1]).slice(0,15);
+  if (labChartInstance) labChartInstance.destroy();
+  const canvas = document.getElementById('labChart');
+  canvas.style.height = Math.max(180, top.length*30+60)+'px';
+  labChartInstance = new Chart(canvas.getContext('2d'), {
+    type:'bar',
+    data: { labels: top.map(([s])=>s.length>30?s.slice(0,30)+'…':s), datasets:[{
+      label:'Produtos', data:top.map(([,n])=>n),
+      backgroundColor:'rgba(123,97,255,0.6)', borderColor:'#7b61ff', borderWidth:1.5, borderRadius:4
+    }]},
+    options: { indexAxis:'y', responsive:true, maintainAspectRatio:false,
+      plugins:{legend:{display:false}},
+      scales:{ x:{grid:{color:'rgba(42,51,68,0.6)'},ticks:{color:'#8b949e',font:{size:10},stepSize:1}},
+               y:{grid:{display:false},ticks:{color:'#e6edf3',font:{size:10}}} }
+    }
+  });
+}
+
+function renderLabTable(rows) {
+  document.getElementById('labTableCount').textContent = rows.length + ' itens';
+  const sorted = [...rows].sort((a,b)=>String(a.SUBSTANCIA).localeCompare(String(b.SUBSTANCIA),'pt-BR'));
+  document.getElementById('labTableBody').innerHTML = sorted.map(r => {
+    const p = formatPrice(r.PRECO);
+    const tipoClass = ['GENÉRICO','GENERICO','SIMILAR','NOVO','BIOLÓGICO','BIOLOGICO'].includes(r.TIPO_PRODUTO)?'tipo-'+r.TIPO_PRODUTO:'tipo-default';
+    return `<tr>
+      <td style="max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:12px">${r.SUBSTANCIA}</td>
+      <td class="td-produto">${r.PRODUTO}</td>
+      <td class="td-apres">${r.APRESENTACAO}</td>
+      <td><span class="badge-tipo ${tipoClass}">${r.TIPO_PRODUTO||'—'}</span></td>
+      <td style="font-size:11px;color:var(--muted)">${r.REGIME_PRECO||'—'}</td>
+      <td class="td-price" style="text-align:right">${p!==null?fmtBRL(p):'—'}</td>
+    </tr>`;
+  }).join('');
+}
+
+function filterLabTable(q) {
+  if (!currentLab) return;
+  const filtered = q ? labTableData.filter(r =>
+    r.SUBSTANCIA.toLowerCase().includes(q.toLowerCase()) ||
+    r.PRODUTO.toLowerCase().includes(q.toLowerCase()) ||
+    r.APRESENTACAO.toLowerCase().includes(q.toLowerCase())
+  ) : labTableData;
+  renderLabTable(filtered);
+}
+
+// ==================== MULTI SELECT ====================
+const msState = {
+  compSubs: { all: [], selected: new Set() },
+  compLabs: { all: [], selected: new Set() },
+};
+
+function populateMsOptions(id, items) {
+  msState[id].all = items;
+  msState[id].selected = new Set();
+  renderMsOptions(id, '');
+}
+
+function renderMsOptions(id, q) {
+  const { all, selected } = msState[id];
+  const filtered = q ? all.filter(i=>i.toLowerCase().includes(q.toLowerCase())) : all;
+  const container = document.getElementById(id+'Options');
+  if (!filtered.length) { container.innerHTML = `<div class="ms-empty">Nenhum resultado</div>`; return; }
+  container.innerHTML = filtered.slice(0,200).map(item => {
+    const sel = selected.has(item);
+    return `<div class="ms-option ${sel?'selected':''}" data-val="${item.replace(/"/g,'&quot;')}" onclick="toggleMsItem('${id}','${item.replace(/'/g,"\\'")}')">
+      <div class="ms-check">${sel?'✓':''}</div>
+      <span>${item.length>40?item.slice(0,40)+'…':item}</span>
+    </div>`;
+  }).join('');
+}
+
+function toggleMs(id) {
+  const drop = document.getElementById(id+'Dropdown');
+  drop.classList.toggle('open');
+  if (drop.classList.contains('open')) document.getElementById(id+'Input').focus();
+}
+
+function filterMs(id, q) {
+  renderMsOptions(id, q);
+  document.getElementById(id+'Dropdown').classList.add('open');
+}
+
+function toggleMsItem(id, val) {
+  const s = msState[id].selected;
+  if (s.has(val)) s.delete(val); else s.add(val);
+  const q = document.getElementById(id+'Input').value;
+  renderMsOptions(id, q);
+  renderMsTags(id);
+}
+
+function renderMsTags(id) {
+  const box = document.getElementById(id+'Box');
+  const placeholder = document.getElementById(id+'Placeholder');
+  const input = document.getElementById(id+'Input');
+  const s = msState[id].selected;
+  // Remove old tags
+  box.querySelectorAll('.ms-tag').forEach(t=>t.remove());
+  if (s.size === 0) { placeholder.style.display=''; }
+  else {
+    placeholder.style.display='none';
+    const tags = [...s].slice(0,4).map(val =>
+      `<div class="ms-tag"><span>${val.length>18?val.slice(0,18)+'…':val}</span><span class="ms-tag-remove" onclick="event.stopPropagation();toggleMsItem('${id}','${val.replace(/'/g,"\\'")}')">×</span></div>`
+    ).join('');
+    const extra = s.size > 4 ? `<div class="ms-tag"><span>+${s.size-4} mais</span></div>` : '';
+    box.insertAdjacentHTML('afterbegin', tags + extra);
+  }
+}
+
+function selectAllMs(id) {
+  const { all, selected } = msState[id];
+  all.forEach(i => selected.add(i));
+  renderMsOptions(id, document.getElementById(id+'Input').value);
+  renderMsTags(id);
+}
+function clearMs(id) {
+  msState[id].selected.clear();
+  renderMsOptions(id, '');
+  renderMsTags(id);
+}
+
+// ==================== COMPARADOR ====================
+function renderComparador() {
+  const subs = [...msState.compSubs.selected];
+  const labs = [...msState.compLabs.selected];
+  if (!subs.length && !labs.length) { showToast('Selecione ao menos uma substância ou laboratório', 'error'); return; }
+
+  document.getElementById('emptyStateComp').style.display = 'none';
+  document.getElementById('comparadorContent').style.display = '';
+
+  // Build matrix: rows = substâncias, cols = laboratórios
+  const activeSubs = subs.length ? subs : allSubstances.filter(s => labs.some(l => substanceMap[s]?.some(r=>r.LABORATORIO===l)));
+  const activeLabs = labs.length ? labs : [...new Set(activeSubs.flatMap(s=>(substanceMap[s]||[]).map(r=>r.LABORATORIO)))];
+
+  // For each subs×labs: min price
+  const matrix = {};
+  activeSubs.forEach(sub => {
+    matrix[sub] = {};
+    activeLabs.forEach(lab => {
+      const rows = (substanceMap[sub]||[]).filter(r=>r.LABORATORIO===lab);
+      const prices = rows.map(r=>formatPrice(r.PRECO)).filter(p=>p!==null);
+      matrix[sub][lab] = prices.length ? Math.min(...prices) : null;
+    });
+  });
+
+  // Build table header
+  const thead = document.getElementById('compMatrizHead');
+  const tbody = document.getElementById('compMatrizBody');
+  const labSlice = activeLabs.slice(0,15);
+
+  thead.innerHTML = `<tr>
+    <th style="min-width:180px;text-align:left">Substância</th>
+    ${labSlice.map(l=>`<th style="min-width:110px;text-align:right">${l.length>20?l.slice(0,20)+'…':l}</th>`).join('')}
+    <th style="min-width:90px;text-align:right">Min</th>
+    <th style="min-width:90px;text-align:right">Max</th>
+    <th style="min-width:80px;text-align:right">Δ%</th>
+  </tr>`;
+
+  tbody.innerHTML = activeSubs.slice(0,50).map(sub => {
+    const rowPrices = labSlice.map(l=>matrix[sub][l]).filter(p=>p!==null);
+    const rowMin = rowPrices.length ? Math.min(...rowPrices) : null;
+    const rowMax = rowPrices.length ? Math.max(...rowPrices) : null;
+    const rowDiff = (rowMin!==null && rowMax!==null && rowMin>0) ? ((rowMax-rowMin)/rowMin*100) : null;
+    const cells = labSlice.map(l => {
+      const p = matrix[sub][l];
+      if (p===null) return `<td style="text-align:right;color:var(--muted);font-size:11px">—</td>`;
+      const isMin = p===rowMin;
+      const isMax = p===rowMax && rowMax!==rowMin;
+      return `<td class="td-price ${isMin?'price-min':isMax?'price-max':''}" style="text-align:right">${fmtBRL(p)}${isMin?' ★':''}</td>`;
+    }).join('');
+    return `<tr>
+      <td style="font-size:12px;font-weight:600;max-width:180px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${sub}</td>
+      ${cells}
+      <td class="td-price price-min" style="text-align:right">${rowMin!==null?fmtBRL(rowMin):'—'}</td>
+      <td class="td-price price-max" style="text-align:right">${rowMax!==null?fmtBRL(rowMax):'—'}</td>
+      <td style="text-align:right">${rowDiff!==null?`<span class="diff-badge ${rowDiff<50?'green':'red'}">${rowDiff.toFixed(1)}%</span>`:'—'}</td>
+    </tr>`;
+  }).join('');
+
+  // Ranking chart
+  const labAvgs = labSlice.map(lab => {
+    const vals = activeSubs.map(s=>matrix[s][lab]).filter(p=>p!==null);
+    return { lab, avg: vals.length ? vals.reduce((a,b)=>a+b,0)/vals.length : null };
+  }).filter(x=>x.avg!==null).sort((a,b)=>a.avg-b.avg);
+
+  if (compChartRank) compChartRank.destroy();
+  const rc = document.getElementById('compRankChart');
+  rc.style.height = Math.max(180, labAvgs.length*34+60)+'px';
+  compChartRank = new Chart(rc.getContext('2d'), {
+    type:'bar',
+    data:{ labels:labAvgs.map(x=>x.lab.length>22?x.lab.slice(0,22)+'…':x.lab),
+      datasets:[{label:'Preço médio',data:labAvgs.map(x=>x.avg),
+        backgroundColor:labAvgs.map((_,i)=>i===0?'rgba(0,201,167,0.85)':i===labAvgs.length-1?'rgba(255,77,109,0.7)':'rgba(123,97,255,0.55)'),
+        borderColor:labAvgs.map((_,i)=>i===0?'#00c9a7':i===labAvgs.length-1?'#ff4d6d':'#7b61ff'),
+        borderWidth:1.5,borderRadius:4}]
+    },
+    options:{indexAxis:'y',responsive:true,maintainAspectRatio:false,
+      plugins:{legend:{display:false},tooltip:{callbacks:{label:ctx=>' '+fmtBRL(ctx.parsed.x)}}},
+      scales:{x:{grid:{color:'rgba(42,51,68,0.6)'},ticks:{color:'#8b949e',font:{size:10},callback:v=>'R$'+v.toLocaleString('pt-BR')}},
+              y:{grid:{display:false},ticks:{color:'#e6edf3',font:{size:10}}}}
+    }
+  });
+
+  // Amplitude chart
+  const subAmpl = activeSubs.slice(0,12).map(sub => {
+    const prices = labSlice.map(l=>matrix[sub][l]).filter(p=>p!==null);
+    const mn = prices.length?Math.min(...prices):null;
+    const mx = prices.length?Math.max(...prices):null;
+    return { sub: sub.length>28?sub.slice(0,28)+'…':sub, diff: (mn!==null&&mx!==null&&mn>0)?((mx-mn)/mn*100):null };
+  }).filter(x=>x.diff!==null).sort((a,b)=>b.diff-a.diff);
+
+  if (compChartAmpl) compChartAmpl.destroy();
+  const ac = document.getElementById('compAmplChart');
+  ac.style.height = Math.max(180, subAmpl.length*32+60)+'px';
+  compChartAmpl = new Chart(ac.getContext('2d'), {
+    type:'bar',
+    data:{ labels:subAmpl.map(x=>x.sub),
+      datasets:[{label:'Diferença %',data:subAmpl.map(x=>x.diff),
+        backgroundColor:'rgba(255,183,3,0.6)',borderColor:'#ffb703',borderWidth:1.5,borderRadius:4}]
+    },
+    options:{indexAxis:'y',responsive:true,maintainAspectRatio:false,
+      plugins:{legend:{display:false},tooltip:{callbacks:{label:ctx=>` ${ctx.parsed.x.toFixed(1)}%`}}},
+      scales:{x:{grid:{color:'rgba(42,51,68,0.6)'},ticks:{color:'#8b949e',font:{size:10},callback:v=>v.toFixed(0)+'%'}},
+              y:{grid:{display:false},ticks:{color:'#e6edf3',font:{size:10}}}}
+    }
+  });
+
+  if (activeLabs.length > 15) showToast(`ℹ️ Mostrando os primeiros 15 laboratórios na tabela`);
+  if (activeSubs.length > 50) showToast(`ℹ️ Mostrando as primeiras 50 substâncias`);
+}
+
+function clearComparador() {
+  clearMs('compSubs');
+  clearMs('compLabs');
+  document.getElementById('emptyStateComp').style.display = '';
+  document.getElementById('comparadorContent').style.display = 'none';
+}
+
+// ==================== EXECUTIVO ====================
+function renderExecutivo() {
+  if (!allRecords.length) return;
+
+  const subs = allSubstances.length;
+  const labs = allLabs.length;
+  const prods = allRecords.length;
+  const priced = allRecords.filter(r=>formatPrice(r.PRECO)!==null);
+  const allPrices = priced.map(r=>formatPrice(r.PRECO));
+  const avgGeral = allPrices.length ? allPrices.reduce((a,b)=>a+b,0)/allPrices.length : 0;
+
+  // Lab avg prices
+  const labAvgMap = {};
+  allLabs.forEach(lab => {
+    const vals = allRecords.filter(r=>r.LABORATORIO===lab).map(r=>formatPrice(r.PRECO)).filter(p=>p!==null);
+    if (vals.length) labAvgMap[lab] = vals.reduce((a,b)=>a+b,0)/vals.length;
+  });
+  const labsSorted = Object.entries(labAvgMap).sort((a,b)=>a[1]-b[1]);
+  const cheapestLab = labsSorted[0];
+  const priciest = labsSorted[labsSorted.length-1];
+
+  // Substância with most labs
+  const subLabCount = {};
+  allSubstances.forEach(s => { subLabCount[s] = new Set((substanceMap[s]||[]).map(r=>r.LABORATORIO)).size; });
+  const mostComp = Object.entries(subLabCount).sort((a,b)=>b[1]-a[1])[0];
+
+  document.getElementById('execKpiSubs').textContent = subs.toLocaleString('pt-BR');
+  document.getElementById('execKpiLabs').textContent = labs.toLocaleString('pt-BR');
+  document.getElementById('execKpiProds').textContent = prods.toLocaleString('pt-BR');
+  document.getElementById('execKpiAvg').textContent = fmtBRL(avgGeral);
+  if (cheapestLab) { document.getElementById('execLabMin').textContent = cheapestLab[0].length>18?cheapestLab[0].slice(0,18)+'…':cheapestLab[0]; document.getElementById('execLabMinVal').textContent = fmtBRL(cheapestLab[1])+' avg'; }
+  if (priciest) { document.getElementById('execLabMax').textContent = priciest[0].length>18?priciest[0].slice(0,18)+'…':priciest[0]; document.getElementById('execLabMaxVal').textContent = fmtBRL(priciest[1])+' avg'; }
+  if (mostComp) { document.getElementById('execMostComp').textContent = mostComp[0].length>18?mostComp[0].slice(0,18)+'…':mostComp[0]; document.getElementById('execMostCompVal').textContent = mostComp[1]+' laboratórios'; }
+
+  // Chart 1: ranking labs por preço médio (top 20)
+  const top20labs = labsSorted.slice(0,20);
+  if (execCharts.rank) execCharts.rank.destroy();
+  const rc = document.getElementById('execRankChart');
+  rc.style.height = Math.max(200, top20labs.length*30+60)+'px';
+  execCharts.rank = new Chart(rc.getContext('2d'), {
+    type:'bar',
+    data:{ labels:top20labs.map(([l])=>l.length>24?l.slice(0,24)+'…':l),
+      datasets:[{label:'Preço médio',data:top20labs.map(([,v])=>v),
+        backgroundColor:top20labs.map((_,i)=>i===0?'rgba(0,201,167,0.85)':i===top20labs.length-1?'rgba(255,77,109,0.7)':'rgba(123,97,255,0.55)'),
+        borderColor:top20labs.map((_,i)=>i===0?'#00c9a7':i===top20labs.length-1?'#ff4d6d':'#7b61ff'),
+        borderWidth:1.5,borderRadius:4}]
+    },
+    options:{indexAxis:'y',responsive:true,maintainAspectRatio:false,
+      plugins:{legend:{display:false},tooltip:{callbacks:{label:ctx=>' '+fmtBRL(ctx.parsed.x)}}},
+      scales:{x:{grid:{color:'rgba(42,51,68,0.6)'},ticks:{color:'#8b949e',font:{size:10},callback:v=>'R$'+v.toLocaleString('pt-BR')}},
+              y:{grid:{display:false},ticks:{color:'#e6edf3',font:{size:10}}}}
+    }
+  });
+
+  // Chart 2: top 10 substâncias com mais labs
+  const top10subs = Object.entries(subLabCount).sort((a,b)=>b[1]-a[1]).slice(0,10);
+  if (execCharts.top10) execCharts.top10.destroy();
+  const t10 = document.getElementById('execTop10Chart');
+  t10.style.height = '320px';
+  execCharts.top10 = new Chart(t10.getContext('2d'), {
+    type:'bar',
+    data:{ labels:top10subs.map(([s])=>s.length>28?s.slice(0,28)+'…':s),
+      datasets:[{label:'Laboratórios',data:top10subs.map(([,v])=>v),
+        backgroundColor:'rgba(255,183,3,0.65)',borderColor:'#ffb703',borderWidth:1.5,borderRadius:4}]
+    },
+    options:{indexAxis:'y',responsive:true,maintainAspectRatio:false,
+      plugins:{legend:{display:false}},
+      scales:{x:{grid:{color:'rgba(42,51,68,0.6)'},ticks:{color:'#8b949e',font:{size:10},stepSize:1}},
+              y:{grid:{display:false},ticks:{color:'#e6edf3',font:{size:10}}}}
+    }
+  });
+
+  // Chart 3: distribuição por tipo
+  const tipoCnt = {};
+  allRecords.forEach(r=>{ const t=r.TIPO_PRODUTO||'Outro'; tipoCnt[t]=(tipoCnt[t]||0)+1; });
+  if (execCharts.tipo) execCharts.tipo.destroy();
+  execCharts.tipo = new Chart(document.getElementById('execTipoChart').getContext('2d'), {
+    type:'doughnut',
+    data:{ labels:Object.keys(tipoCnt), datasets:[{data:Object.values(tipoCnt),
+      backgroundColor:['rgba(123,97,255,0.7)','rgba(0,201,167,0.7)','rgba(255,77,109,0.7)','rgba(255,183,3,0.7)','rgba(139,148,158,0.5)'],
+      borderColor:'#161b22',borderWidth:2}]
+    },
+    options:{responsive:true,maintainAspectRatio:false,
+      plugins:{legend:{position:'bottom',labels:{color:'#8b949e',font:{size:11},padding:10}},
+               tooltip:{callbacks:{label:ctx=>`${ctx.label}: ${ctx.parsed.toLocaleString('pt-BR')}`}}}
+    }
+  });
+
+  // Chart 4: preço médio por regime
+  const regimeCnt = {};
+  priced.forEach(r=>{ const rg=r.REGIME_PRECO||'Outro'; if(!regimeCnt[rg]) regimeCnt[rg]={sum:0,n:0}; regimeCnt[rg].sum+=formatPrice(r.PRECO); regimeCnt[rg].n++; });
+  const regimeAvgs = Object.entries(regimeCnt).map(([k,v])=>({k,avg:v.sum/v.n})).sort((a,b)=>b.avg-a.avg);
+  if (execCharts.regime) execCharts.regime.destroy();
+  execCharts.regime = new Chart(document.getElementById('execRegimeChart').getContext('2d'), {
+    type:'bar',
+    data:{ labels:regimeAvgs.map(x=>x.k),
+      datasets:[{label:'Preço médio',data:regimeAvgs.map(x=>x.avg),
+        backgroundColor:'rgba(0,201,167,0.6)',borderColor:'#00c9a7',borderWidth:1.5,borderRadius:4}]
+    },
+    options:{responsive:true,maintainAspectRatio:false,
+      plugins:{legend:{display:false},tooltip:{callbacks:{label:ctx=>' '+fmtBRL(ctx.parsed.y)}}},
+      scales:{x:{grid:{display:false},ticks:{color:'#8b949e',font:{size:11}}},
+              y:{grid:{color:'rgba(42,51,68,0.6)'},ticks:{color:'#8b949e',font:{size:10},callback:v=>'R$'+v.toLocaleString('pt-BR')}}}
+    }
+  });
+}
+
+// ==================== EXPORT ====================
+function exportarTabela() {
+  if (!currentSubstance) { showToast('Selecione uma substância primeiro', 'error'); return; }
+  const rows = substanceMap[currentSubstance] || [];
+  let filtered = currentTipo ? rows.filter(r=>r.TIPO_PRODUTO===currentTipo) : rows;
+  if (currentApres.size>0) filtered = filtered.filter(r=>currentApres.has(r.APRESENTACAO));
+  const ws = XLSX.utils.json_to_sheet(filtered.map(r=>({
+    Substância: r.SUBSTANCIA,
+    Laboratório: r.LABORATORIO,
+    Produto: r.PRODUTO,
+    Apresentação: r.APRESENTACAO,
+    'Tipo Produto': r.TIPO_PRODUTO,
+    'Regime Preço': r.REGIME_PRECO,
+    'Preço (R$)': formatPrice(r.PRECO)
+  })));
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, 'Comparação');
+  XLSX.writeFile(wb, `comparacao_${currentSubstance.slice(0,30)}.xlsx`);
+  showToast('✅ Exportado com sucesso', 'success');
+}
+
+function exportarTabelaLab() {
+  if (!currentLab) { showToast('Selecione um laboratório primeiro', 'error'); return; }
+  const ws = XLSX.utils.json_to_sheet(labTableData.map(r=>({
+    Substância: r.SUBSTANCIA,
+    Laboratório: r.LABORATORIO,
+    Produto: r.PRODUTO,
+    Apresentação: r.APRESENTACAO,
+    'Tipo Produto': r.TIPO_PRODUTO,
+    'Regime Preço': r.REGIME_PRECO,
+    'Preço (R$)': formatPrice(r.PRECO)
+  })));
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, 'Laboratório');
+  XLSX.writeFile(wb, `lab_${currentLab.slice(0,30)}.xlsx`);
+  showToast('✅ Exportado com sucesso', 'success');
+}
+
+function exportarComparador() {
+  const subs = [...msState.compSubs.selected];
+  const labs = [...msState.compLabs.selected];
+  if (!subs.length && !labs.length) { showToast('Configure o comparador primeiro', 'error'); return; }
+  const rows = allRecords.filter(r =>
+    (subs.length===0||subs.includes(r.SUBSTANCIA)) &&
+    (labs.length===0||labs.includes(r.LABORATORIO))
+  );
+  const ws = XLSX.utils.json_to_sheet(rows.map(r=>({
+    Substância: r.SUBSTANCIA,
+    Laboratório: r.LABORATORIO,
+    Produto: r.PRODUTO,
+    Apresentação: r.APRESENTACAO,
+    'Tipo Produto': r.TIPO_PRODUTO,
+    'Preço (R$)': formatPrice(r.PRECO)
+  })));
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, 'Comparador');
+  XLSX.writeFile(wb, 'comparador_avancado.xlsx');
+  showToast('✅ Exportado com sucesso', 'success');
 }
 </script>
 </body>
