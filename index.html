@@ -266,11 +266,16 @@
       <!-- FILTROS DA ABA SUBSTÂNCIA -->
       <div id="sidebarSubstancia">
         <div class="sidebar-section">
-          <div class="sidebar-title">🔍 Substância Ativa</div>
-          <div class="search-wrap">
-            <span class="search-icon">⌕</span>
-            <input type="text" id="substanciaInput" class="search-input" placeholder="Buscar substância…" autocomplete="off" disabled>
-            <div id="substanciaDropdown" class="single-dropdown"></div>
+          <div class="sidebar-title">🔍 Substâncias Ativas</div>
+          <div class="ms-wrap" id="substSubsWrap">
+            <div class="ms-box" id="substSubsBox" onclick="toggleMs('substSubs')">
+              <span class="ms-placeholder" id="substSubsPlaceholder">Buscar substância…</span>
+              <input type="text" class="ms-input" id="substanciaInput" placeholder="" oninput="filterMs('substSubs',this.value)" onclick="event.stopPropagation()" disabled>
+            </div>
+            <div class="ms-dropdown" id="substSubsDropdown">
+              <div class="ms-select-all"><span onclick="selectAllMs('substSubs')">Selecionar todos</span><span onclick="clearMs('substSubs')">Limpar</span></div>
+              <div id="substSubsOptions"></div>
+            </div>
           </div>
           <div class="chip-row" id="chipRow" style="margin-top:8px">
             <div class="chip active" data-tipo="">Todos</div>
@@ -298,15 +303,21 @@
       <!-- FILTROS DA ABA LABORATÓRIO -->
       <div id="sidebarLaboratorio" style="display:none">
         <div class="sidebar-section">
-          <div class="sidebar-title">🏭 Laboratório</div>
-          <div class="search-wrap">
-            <span class="search-icon">⌕</span>
-            <input type="text" id="labInput" class="search-input" placeholder="Buscar laboratório…" autocomplete="off" disabled>
-            <div id="labDropdown" class="single-dropdown"></div>
+          <div class="sidebar-title">🏭 Laboratórios</div>
+          <div class="ms-wrap" id="labLabsWrap">
+            <div class="ms-box" id="labLabsBox" onclick="toggleMs('labLabs')">
+              <span class="ms-placeholder" id="labLabsPlaceholder">Buscar laboratório…</span>
+              <input type="text" class="ms-input" id="labInput" placeholder="" oninput="filterMs('labLabs',this.value)" onclick="event.stopPropagation()" disabled>
+            </div>
+            <div class="ms-dropdown" id="labLabsDropdown">
+              <div class="ms-select-all"><span onclick="selectAllMs('labLabs')">Selecionar todos</span><span onclick="clearMs('labLabs')">Limpar</span></div>
+              <div id="labLabsOptions"></div>
+            </div>
           </div>
         </div>
         <div class="sidebar-section">
           <div style="display:flex;flex-direction:column;gap:8px;">
+            <button class="btn-danger" onclick="clearLabFilters()">🗑 Limpar filtros</button>
             <button class="btn-secondary" onclick="exportarTabelaLab()">⬇ Exportar para Excel</button>
           </div>
         </div>
@@ -456,7 +467,7 @@
         </div>
         <div class="panel">
           <div class="panel-header">
-            <div class="panel-header-left">Produtos do Laboratório <span class="panel-count" id="labTableCount">0</span></div>
+            <div class="panel-header-left">Produtos <span class="panel-count" id="labTableCount">0</span></div>
             <div class="panel-actions">
               <input type="text" class="search-input" style="width:200px;padding:6px 10px;" placeholder="Filtrar…" id="labTableSearch" oninput="filterLabTable(this.value)">
             </div>
@@ -465,6 +476,7 @@
             <table>
               <thead>
                 <tr>
+                  <th id="labColLab" style="display:none">Laboratório</th>
                   <th>Substância</th>
                   <th>Produto</th>
                   <th>Apresentação</th>
@@ -678,8 +690,10 @@ function loadData(records, fileName, sheetName) {
   // Reset
   currentSubstance = null;
   currentLab = null;
-  document.getElementById('substanciaInput').value = '';
-  document.getElementById('labInput').value = '';
+  msState.substSubs.selected.clear();
+  msState.labLabs.selected.clear();
+  populateMsOptions('substSubs', allSubstances);
+  populateMsOptions('labLabs', allLabs);
   document.getElementById('tabSubstancia').style.display = '';
   document.getElementById('tabLaboratorio').style.display = 'none';
   document.getElementById('tabComparador').style.display = 'none';
@@ -731,69 +745,29 @@ function toggleSidebar() {
   document.getElementById('sidebar').classList.toggle('collapsed');
 }
 
-// ==================== SUBSTÂNCIA AUTOCOMPLETE ====================
-const substInput = document.getElementById('substanciaInput');
-const substDrop = document.getElementById('substanciaDropdown');
-
-substInput.addEventListener('input', () => {
-  const q = substInput.value.trim().toUpperCase();
-  if (!q) { substDrop.classList.remove('open'); return; }
-  const matches = allSubstances.filter(s => s.toUpperCase().includes(q)).slice(0, 40);
-  if (!matches.length) { substDrop.classList.remove('open'); return; }
-  const re = new RegExp(q.replace(/[.*+?^${}()|[\]\\]/g,'\\$&'), 'gi');
-  substDrop.innerHTML = matches.map(s =>
-    `<div class="drop-item" data-val="${s}">${s.replace(re, m => `<mark>${m}</mark>`)}</div>`
-  ).join('');
-  substDrop.classList.add('open');
-});
-substDrop.addEventListener('click', e => {
-  const item = e.target.closest('.drop-item');
-  if (!item) return;
-  substInput.value = item.dataset.val;
-  substDrop.classList.remove('open');
-  selectSubstance(item.dataset.val);
-});
-substInput.addEventListener('keydown', e => {
-  if (e.key === 'Enter') {
-    const first = substDrop.querySelector('.drop-item');
-    if (first) { substInput.value = first.dataset.val; substDrop.classList.remove('open'); selectSubstance(first.dataset.val); }
+// ==================== SUBSTÂNCIA AUTOCOMPLETE (legacy refs kept for compat) ====================
+// Input is now part of ms-wrap; filterMs handles the dropdown.
+// selectSubstance kept for any direct calls but now delegates to msState.
+function selectSubstance(name) {
+  if (!msState.substSubs.selected.has(name)) {
+    msState.substSubs.selected.add(name);
+    renderMsOptions('substSubs', '');
+    renderMsTags('substSubs');
   }
-});
+  renderSubstancia();
+}
 
-// ==================== LAB AUTOCOMPLETE ====================
-const labInput = document.getElementById('labInput');
-const labDrop = document.getElementById('labDropdown');
-
-labInput.addEventListener('input', () => {
-  const q = labInput.value.trim().toUpperCase();
-  if (!q) { labDrop.classList.remove('open'); return; }
-  const matches = allLabs.filter(l => l.toUpperCase().includes(q)).slice(0, 30);
-  if (!matches.length) { labDrop.classList.remove('open'); return; }
-  const re = new RegExp(q.replace(/[.*+?^${}()|[\]\\]/g,'\\$&'), 'gi');
-  labDrop.innerHTML = matches.map(l =>
-    `<div class="drop-item" data-val="${l}">${l.replace(re, m => `<mark>${m}</mark>`)}</div>`
-  ).join('');
-  labDrop.classList.add('open');
-});
-labDrop.addEventListener('click', e => {
-  const item = e.target.closest('.drop-item');
-  if (!item) return;
-  labInput.value = item.dataset.val;
-  labDrop.classList.remove('open');
-  selectLab(item.dataset.val);
-});
-labInput.addEventListener('keydown', e => {
-  if (e.key === 'Enter') {
-    const first = labDrop.querySelector('.drop-item');
-    if (first) { labInput.value = first.dataset.val; labDrop.classList.remove('open'); selectLab(first.dataset.val); }
+// ==================== LAB AUTOCOMPLETE (legacy refs kept for compat) ====================
+function selectLab(name) {
+  if (!msState.labLabs.selected.has(name)) {
+    msState.labLabs.selected.add(name);
+    renderMsOptions('labLabs', '');
+    renderMsTags('labLabs');
   }
-});
+  selectLabMulti();
+}
 
 document.addEventListener('click', e => {
-  if (!e.target.closest('.search-wrap')) {
-    substDrop.classList.remove('open');
-    labDrop.classList.remove('open');
-  }
   if (!e.target.closest('.ms-wrap')) {
     document.querySelectorAll('.ms-dropdown').forEach(d => d.classList.remove('open'));
   }
@@ -806,30 +780,15 @@ document.getElementById('chipRow').addEventListener('click', e => {
   document.querySelectorAll('#chipRow .chip').forEach(c => c.classList.remove('active'));
   chip.classList.add('active');
   currentTipo = chip.dataset.tipo;
-  if (currentSubstance) renderSubstancia();
+  if (msState.substSubs.selected.size > 0) renderSubstancia();
 });
 
 // ==================== SELECT SUBSTANCE ====================
 function selectSubstance(name) {
-  currentSubstance = name;
-  currentApres = new Set();
-  sortKey = 'PRECO'; sortDir = 1;
-  document.querySelectorAll('thead th').forEach(th => { th.classList.remove('sorted'); if(th.querySelector('.sort-arrow')) th.querySelector('.sort-arrow').textContent = '↕'; });
-  const th = document.getElementById('th-PRECO');
-  if(th) { th.classList.add('sorted'); th.querySelector('.sort-arrow').textContent = '↑'; }
-
-  // Build apresentação chips
-  const rows = substanceMap[name] || [];
-  const apresSet = [...new Set(rows.map(r => r.APRESENTACAO).filter(Boolean))].sort();
-  const apresFilter = document.getElementById('apresFilter');
-  const apresSection = document.getElementById('apresSection');
-  if (apresSet.length > 1) {
-    apresFilter.innerHTML = apresSet.map(a =>
-      `<div class="apres-chip" data-apres="${a}" onclick="toggleApres('${a.replace(/'/g,"\\'")}',this)">${a}</div>`
-    ).join('');
-    apresSection.style.display = '';
-  } else {
-    apresSection.style.display = 'none';
+  if (!msState.substSubs.selected.has(name)) {
+    msState.substSubs.selected.add(name);
+    renderMsOptions('substSubs', '');
+    renderMsTags('substSubs');
   }
   renderSubstancia();
 }
@@ -846,14 +805,39 @@ function sortTable(key) {
   document.querySelectorAll('thead th').forEach(th => { th.classList.remove('sorted'); if(th.querySelector('.sort-arrow')) th.querySelector('.sort-arrow').textContent = '↕'; });
   const th = document.getElementById('th-' + key);
   if(th) { th.classList.add('sorted'); th.querySelector('.sort-arrow').textContent = sortDir === 1 ? '↑' : '↓'; }
-  if (currentSubstance) renderSubstancia();
+  if (msState.substSubs.selected.size > 0) renderSubstancia();
 }
 
 // ==================== RENDER SUBSTÂNCIA ====================
 function renderSubstancia() {
-  const rows = substanceMap[currentSubstance] || [];
+  const selSubs = [...msState.substSubs.selected];
+  if (!selSubs.length) {
+    document.getElementById('emptyState').style.display = 'block';
+    document.getElementById('kpiRow').style.display = 'none';
+    document.getElementById('winnerBanner').style.display = 'none';
+    document.getElementById('contentGrid').style.display = 'none';
+    document.getElementById('apresSection').style.display = 'none';
+    return;
+  }
+
+  // Aggregate rows from all selected substances
+  let rows = selSubs.flatMap(s => substanceMap[s] || []);
   let filtered = currentTipo ? rows.filter(r => r.TIPO_PRODUTO === currentTipo) : rows;
   if (currentApres.size > 0) filtered = filtered.filter(r => currentApres.has(r.APRESENTACAO));
+
+  // Rebuild apresentação chips from aggregated rows
+  const apresSet = [...new Set(rows.map(r => r.APRESENTACAO).filter(Boolean))].sort();
+  const apresFilter = document.getElementById('apresFilter');
+  const apresSection = document.getElementById('apresSection');
+  if (apresSet.length > 1) {
+    apresFilter.innerHTML = apresSet.map(a =>
+      `<div class="apres-chip${currentApres.has(a)?' active':''}" data-apres="${a}" onclick="toggleApres('${a.replace(/'/g,"\\'")}',this)">${a}</div>`
+    ).join('');
+    apresSection.style.display = '';
+  } else {
+    currentApres.clear();
+    apresSection.style.display = 'none';
+  }
 
   document.getElementById('emptyState').style.display = 'none';
   document.getElementById('kpiRow').style.display = '';
@@ -872,7 +856,9 @@ function renderSubstancia() {
   const diffPct  = (minPrice !== null && maxPrice !== null && minPrice > 0) ? ((maxPrice-minPrice)/minPrice*100) : null;
 
   document.getElementById('kpiTotal').textContent = filtered.length;
-  document.getElementById('kpiSubTotal').textContent = rows.length + ' no total';
+  document.getElementById('kpiSubTotal').textContent = selSubs.length > 1
+    ? `${selSubs.length} substâncias · ${rows.length} no total`
+    : rows.length + ' no total';
   document.getElementById('kpiLabs').textContent = new Set(filtered.map(r=>r.LABORATORIO)).size;
   document.getElementById('kpiMin').textContent = minPrice !== null ? fmtBRL(minPrice) : '—';
   document.getElementById('kpiMax').textContent = maxPrice !== null ? fmtBRL(maxPrice) : '—';
@@ -892,6 +878,10 @@ function renderSubstancia() {
     document.getElementById('winnerPrice').textContent = fmtBRL(minPrice);
   } else { banner.style.display = 'none'; }
 
+  // Show SUBSTANCIA column in table when multiple substances selected
+  const multiSub = selSubs.length > 1;
+  document.querySelectorAll('.col-substancia-header').forEach(el => el.style.display = multiSub ? '' : 'none');
+
   document.getElementById('tableCount').textContent = sorted.length + ' itens';
   document.getElementById('tableBody').innerHTML = sorted.map(r => {
     const p = formatPrice(r.PRECO);
@@ -901,7 +891,9 @@ function renderSubstancia() {
     const priceCell = p === null
       ? `<span class="td-price" style="color:var(--muted);font-style:italic;font-size:11px;font-weight:400">sem preço</span>`
       : `<span class="td-price ${isCheapest?'price-min':isPriciest?'price-max':''}">${fmtBRL(p)}${isCheapest?'<span class="price-star">★</span>':''}</span>`;
+    const subCell = multiSub ? `<td style="font-size:11px;color:var(--muted);max-width:140px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${r.SUBSTANCIA}</td>` : '';
     return `<tr class="${isCheapest?'cheapest':isPriciest?'priciest':''}">
+      ${subCell}
       <td><div class="td-lab">${r.LABORATORIO}</div></td>
       <td><div class="td-produto">${r.PRODUTO}</div></td>
       <td><div class="td-apres">${r.APRESENTACAO}</div></td>
@@ -909,6 +901,17 @@ function renderSubstancia() {
       <td>${priceCell}</td>
     </tr>`;
   }).join('');
+
+  // Update thead to show/hide Substância column
+  const thead = document.getElementById('tableBody').closest('table').querySelector('thead tr');
+  if (thead) {
+    const existing = thead.querySelector('.col-substancia-header');
+    if (multiSub && !existing) {
+      thead.insertAdjacentHTML('afterbegin', '<th class="col-substancia-header">Substância</th>');
+    } else if (!multiSub && existing) {
+      existing.remove();
+    }
+  }
 
   renderSubstanciaChart(sorted, minPrice);
 }
@@ -945,23 +948,39 @@ function renderSubstanciaChart(rows, minPrice) {
 
 // ==================== CLEAR FILTERS ====================
 function clearFilters() {
-  currentSubstance = null;
+  msState.substSubs.selected.clear();
   currentTipo = '';
   currentApres = new Set();
-  document.getElementById('substanciaInput').value = '';
   document.querySelectorAll('#chipRow .chip').forEach(c => c.classList.toggle('active', c.dataset.tipo===''));
   document.getElementById('apresFilter').innerHTML = '';
   document.getElementById('apresSection').style.display = 'none';
+  renderMsOptions('substSubs', '');
+  renderMsTags('substSubs');
   document.getElementById('kpiRow').style.display = 'none';
   document.getElementById('winnerBanner').style.display = 'none';
   document.getElementById('contentGrid').style.display = 'none';
   document.getElementById('emptyState').style.display = 'block';
 }
 
-// ==================== SELECT LAB ====================
+// ==================== SELECT LAB (multi) ====================
 function selectLab(name) {
-  currentLab = name;
-  const rows = allRecords.filter(r => r.LABORATORIO === name);
+  if (!msState.labLabs.selected.has(name)) {
+    msState.labLabs.selected.add(name);
+    renderMsOptions('labLabs', '');
+    renderMsTags('labLabs');
+  }
+  selectLabMulti();
+}
+
+function selectLabMulti() {
+  const selLabs = [...msState.labLabs.selected];
+  if (!selLabs.length) {
+    document.getElementById('emptyStateLab').style.display = '';
+    document.getElementById('labContent').style.display = 'none';
+    return;
+  }
+  currentLab = selLabs.length === 1 ? selLabs[0] : null; // keep compat
+  const rows = allRecords.filter(r => selLabs.includes(r.LABORATORIO));
   labTableData = rows;
   const priced = rows.filter(r=>formatPrice(r.PRECO)!==null);
   const prices = priced.map(r=>formatPrice(r.PRECO));
@@ -978,7 +997,12 @@ function selectLab(name) {
   document.getElementById('labKpiMax').textContent = maxP !== null ? fmtBRL(maxP) : '—';
   document.getElementById('labKpiAvg').textContent = avgP !== null ? fmtBRL(avgP) : '—';
 
-  renderLabTable(rows);
+  // Show lab column in table when multiple labs selected
+  const multiLab = selLabs.length > 1;
+  const labColHeader = document.getElementById('labColLab');
+  if (labColHeader) labColHeader.style.display = multiLab ? '' : 'none';
+
+  renderLabTable(rows, multiLab);
 
   // Chart: top substâncias by count
   const subCount = {};
@@ -1001,13 +1025,26 @@ function selectLab(name) {
   });
 }
 
-function renderLabTable(rows) {
+function clearLabFilters() {
+  msState.labLabs.selected.clear();
+  renderMsOptions('labLabs', '');
+  renderMsTags('labLabs');
+  labTableData = [];
+  currentLab = null;
+  document.getElementById('emptyStateLab').style.display = '';
+  document.getElementById('labContent').style.display = 'none';
+  document.getElementById('labTableSearch').value = '';
+}
+
+function renderLabTable(rows, multiLab) {
   document.getElementById('labTableCount').textContent = rows.length + ' itens';
   const sorted = [...rows].sort((a,b)=>String(a.SUBSTANCIA).localeCompare(String(b.SUBSTANCIA),'pt-BR'));
   document.getElementById('labTableBody').innerHTML = sorted.map(r => {
     const p = formatPrice(r.PRECO);
     const tipoClass = ['GENÉRICO','GENERICO','SIMILAR','NOVO','BIOLÓGICO','BIOLOGICO'].includes(r.TIPO_PRODUTO)?'tipo-'+r.TIPO_PRODUTO:'tipo-default';
+    const labCell = multiLab ? `<td style="font-weight:600;font-size:12px;max-width:140px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${r.LABORATORIO}</td>` : '';
     return `<tr>
+      ${labCell}
       <td style="max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:12px">${r.SUBSTANCIA}</td>
       <td class="td-produto">${r.PRODUTO}</td>
       <td class="td-apres">${r.APRESENTACAO}</td>
@@ -1019,17 +1056,22 @@ function renderLabTable(rows) {
 }
 
 function filterLabTable(q) {
-  if (!currentLab) return;
+  const selLabs = [...msState.labLabs.selected];
+  if (!selLabs.length) return;
+  const multiLab = selLabs.length > 1;
   const filtered = q ? labTableData.filter(r =>
     r.SUBSTANCIA.toLowerCase().includes(q.toLowerCase()) ||
     r.PRODUTO.toLowerCase().includes(q.toLowerCase()) ||
-    r.APRESENTACAO.toLowerCase().includes(q.toLowerCase())
+    r.APRESENTACAO.toLowerCase().includes(q.toLowerCase()) ||
+    r.LABORATORIO.toLowerCase().includes(q.toLowerCase())
   ) : labTableData;
-  renderLabTable(filtered);
+  renderLabTable(filtered, multiLab);
 }
 
 // ==================== MULTI SELECT ====================
 const msState = {
+  substSubs: { all: [], selected: new Set() },
+  labLabs:   { all: [], selected: new Set() },
   compSubs: { all: [], selected: new Set() },
   compLabs: { all: [], selected: new Set() },
   compApres: { all: [], selected: new Set() },
@@ -1132,10 +1174,17 @@ function filterMs(id, q) {
 function toggleMsItem(id, val) {
   const s = msState[id].selected;
   if (s.has(val)) s.delete(val); else s.add(val);
-  const q = document.getElementById(id+'Input').value;
-  // Cross-filter for comparador
+  const q = document.getElementById(id+'Input')?.value || '';
   if (id === 'compSubs' || id === 'compLabs' || id === 'compApres') {
     updateCompCrossFilters(id);
+  } else if (id === 'substSubs') {
+    renderMsOptions(id, q);
+    renderMsTags(id);
+    renderSubstancia();
+  } else if (id === 'labLabs') {
+    renderMsOptions(id, q);
+    renderMsTags(id);
+    selectLabMulti();
   } else {
     renderMsOptions(id, q);
     renderMsTags(id);
@@ -1165,6 +1214,14 @@ function selectAllMs(id) {
   all.forEach(i => selected.add(i));
   if (id === 'compSubs' || id === 'compLabs' || id === 'compApres') {
     updateCompCrossFilters(id);
+  } else if (id === 'substSubs') {
+    renderMsOptions(id, document.getElementById(id+'Input')?.value || '');
+    renderMsTags(id);
+    renderSubstancia();
+  } else if (id === 'labLabs') {
+    renderMsOptions(id, document.getElementById(id+'Input')?.value || '');
+    renderMsTags(id);
+    selectLabMulti();
   } else {
     renderMsOptions(id, document.getElementById(id+'Input').value);
     renderMsTags(id);
@@ -1174,6 +1231,14 @@ function clearMs(id) {
   msState[id].selected.clear();
   if (id === 'compSubs' || id === 'compLabs' || id === 'compApres') {
     updateCompCrossFilters(id);
+  } else if (id === 'substSubs') {
+    renderMsOptions(id, '');
+    renderMsTags(id);
+    renderSubstancia();
+  } else if (id === 'labLabs') {
+    renderMsOptions(id, '');
+    renderMsTags(id);
+    selectLabMulti();
   } else {
     renderMsOptions(id, '');
     renderMsTags(id);
@@ -1422,8 +1487,9 @@ function renderExecutivo() {
 
 // ==================== EXPORT ====================
 function exportarTabela() {
-  if (!currentSubstance) { showToast('Selecione uma substância primeiro', 'error'); return; }
-  const rows = substanceMap[currentSubstance] || [];
+  const selSubs = [...msState.substSubs.selected];
+  if (!selSubs.length) { showToast('Selecione uma substância primeiro', 'error'); return; }
+  const rows = selSubs.flatMap(s => substanceMap[s] || []);
   let filtered = currentTipo ? rows.filter(r=>r.TIPO_PRODUTO===currentTipo) : rows;
   if (currentApres.size>0) filtered = filtered.filter(r=>currentApres.has(r.APRESENTACAO));
   const ws = XLSX.utils.json_to_sheet(filtered.map(r=>({
@@ -1437,12 +1503,13 @@ function exportarTabela() {
   })));
   const wb = XLSX.utils.book_new();
   XLSX.utils.book_append_sheet(wb, ws, 'Comparação');
-  XLSX.writeFile(wb, `comparacao_${currentSubstance.slice(0,30)}.xlsx`);
+  XLSX.writeFile(wb, `comparacao_${[...msState.substSubs.selected].slice(0,2).join('_').slice(0,30)}.xlsx`);
   showToast('✅ Exportado com sucesso', 'success');
 }
 
 function exportarTabelaLab() {
-  if (!currentLab) { showToast('Selecione um laboratório primeiro', 'error'); return; }
+  const selLabs = [...msState.labLabs.selected];
+  if (!selLabs.length) { showToast('Selecione um laboratório primeiro', 'error'); return; }
   const ws = XLSX.utils.json_to_sheet(labTableData.map(r=>({
     Substância: r.SUBSTANCIA,
     Laboratório: r.LABORATORIO,
@@ -1454,7 +1521,7 @@ function exportarTabelaLab() {
   })));
   const wb = XLSX.utils.book_new();
   XLSX.utils.book_append_sheet(wb, ws, 'Laboratório');
-  XLSX.writeFile(wb, `lab_${currentLab.slice(0,30)}.xlsx`);
+  XLSX.writeFile(wb, `lab_${[...msState.labLabs.selected].slice(0,2).join('_').slice(0,30)}.xlsx`);
   showToast('✅ Exportado com sucesso', 'success');
 }
 
