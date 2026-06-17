@@ -315,7 +315,20 @@
       <!-- FILTROS DO COMPARADOR -->
       <div id="sidebarComparador" style="display:none">
         <div class="sidebar-section">
-          <div class="sidebar-title">💊 Substâncias</div>
+          <div class="sidebar-title">🏭 Laboratórios</div>
+          <div class="ms-wrap" id="compLabsWrap">
+            <div class="ms-box" id="compLabsBox" onclick="toggleMs('compLabs')">
+              <span class="ms-placeholder" id="compLabsPlaceholder">Selecionar laboratórios…</span>
+              <input type="text" class="ms-input" id="compLabsInput" placeholder="" oninput="filterMs('compLabs',this.value)" onclick="event.stopPropagation()">
+            </div>
+            <div class="ms-dropdown" id="compLabsDropdown">
+              <div class="ms-select-all"><span onclick="selectAllMs('compLabs')">Selecionar todos</span><span onclick="clearMs('compLabs')">Limpar</span></div>
+              <div id="compLabsOptions"></div>
+            </div>
+          </div>
+        </div>
+        <div class="sidebar-section">
+          <div class="sidebar-title">💊 Substâncias <span id="compSubsAvailCount" style="font-size:10px;color:var(--muted);font-weight:400;text-transform:none;letter-spacing:0"></span></div>
           <div class="ms-wrap" id="compSubsWrap">
             <div class="ms-box" id="compSubsBox" onclick="toggleMs('compSubs')">
               <span class="ms-placeholder" id="compSubsPlaceholder">Selecionar substâncias…</span>
@@ -327,16 +340,16 @@
             </div>
           </div>
         </div>
-        <div class="sidebar-section">
-          <div class="sidebar-title">🏭 Laboratórios</div>
-          <div class="ms-wrap" id="compLabsWrap">
-            <div class="ms-box" id="compLabsBox" onclick="toggleMs('compLabs')">
-              <span class="ms-placeholder" id="compLabsPlaceholder">Selecionar laboratórios…</span>
-              <input type="text" class="ms-input" id="compLabsInput" placeholder="" oninput="filterMs('compLabs',this.value)" onclick="event.stopPropagation()">
+        <div class="sidebar-section" id="compApresSection" style="display:none">
+          <div class="sidebar-title">📦 Apresentação <span id="compApresAvailCount" style="font-size:10px;color:var(--muted);font-weight:400;text-transform:none;letter-spacing:0"></span></div>
+          <div class="ms-wrap" id="compApresWrap">
+            <div class="ms-box" id="compApresBox" onclick="toggleMs('compApres')">
+              <span class="ms-placeholder" id="compApresPlaceholder">Todas as apresentações…</span>
+              <input type="text" class="ms-input" id="compApresInput" placeholder="" oninput="filterMs('compApres',this.value)" onclick="event.stopPropagation()">
             </div>
-            <div class="ms-dropdown" id="compLabsDropdown">
-              <div class="ms-select-all"><span onclick="selectAllMs('compLabs')">Selecionar todos</span><span onclick="clearMs('compLabs')">Limpar</span></div>
-              <div id="compLabsOptions"></div>
+            <div class="ms-dropdown" id="compApresDropdown">
+              <div class="ms-select-all"><span onclick="selectAllMs('compApres')">Selecionar todos</span><span onclick="clearMs('compApres')">Limpar</span></div>
+              <div id="compApresOptions"></div>
             </div>
           </div>
         </div>
@@ -683,6 +696,9 @@ function loadData(records, fileName, sheetName) {
   // Populate comparador multi-selects
   populateMsOptions('compSubs', allSubstances);
   populateMsOptions('compLabs', allLabs);
+  populateMsOptions('compApres', []);
+  const apresSection = document.getElementById('compApresSection');
+  if (apresSection) apresSection.style.display = 'none';
 
   renderExecutivo();
   showToast(`✅ ${records.length.toLocaleString('pt-BR')} produtos carregados`, 'success');
@@ -1016,12 +1032,76 @@ function filterLabTable(q) {
 const msState = {
   compSubs: { all: [], selected: new Set() },
   compLabs: { all: [], selected: new Set() },
+  compApres: { all: [], selected: new Set() },
 };
 
 function populateMsOptions(id, items) {
   msState[id].all = items;
   msState[id].selected = new Set();
   renderMsOptions(id, '');
+}
+
+// Cross-filter: called after any comp selection changes
+function updateCompCrossFilters(changedId) {
+  const selLabs = [...msState.compLabs.selected];
+  const selSubs = [...msState.compSubs.selected];
+
+  // Determine available substâncias based on selected labs
+  if (selLabs.length > 0) {
+    const availSubs = allSubstances.filter(s =>
+      selLabs.some(l => (substanceMap[s]||[]).some(r => r.LABORATORIO === l))
+    );
+    msState.compSubs.all = availSubs;
+    // Remove selected subs that are no longer available
+    [...msState.compSubs.selected].forEach(s => { if (!availSubs.includes(s)) msState.compSubs.selected.delete(s); });
+    const countEl = document.getElementById('compSubsAvailCount');
+    if (countEl) countEl.textContent = `(${availSubs.length} disponíveis)`;
+  } else {
+    msState.compSubs.all = allSubstances;
+    const countEl = document.getElementById('compSubsAvailCount');
+    if (countEl) countEl.textContent = '';
+  }
+
+  // Determine available labs based on selected subs
+  if (selSubs.length > 0) {
+    const availLabs = allLabs.filter(l =>
+      selSubs.some(s => (substanceMap[s]||[]).some(r => r.LABORATORIO === l))
+    );
+    msState.compLabs.all = availLabs;
+    [...msState.compLabs.selected].forEach(l => { if (!availLabs.includes(l)) msState.compLabs.selected.delete(l); });
+    const countEl = document.getElementById('compLabsAvailCount');
+    if (countEl) countEl.textContent = `(${availLabs.length} disponíveis)`;
+  } else {
+    msState.compLabs.all = allLabs;
+    const countEl = document.getElementById('compLabsAvailCount');
+    if (countEl) countEl.textContent = '';
+  }
+
+  // Determine available apresentações based on selected labs + subs
+  const activeSubs = selSubs.length ? selSubs : msState.compSubs.all;
+  const activeLabs = selLabs.length ? selLabs : msState.compLabs.all;
+  const availApres = [...new Set(
+    allRecords
+      .filter(r => activeSubs.includes(r.SUBSTANCIA) && activeLabs.includes(r.LABORATORIO) && r.APRESENTACAO)
+      .map(r => r.APRESENTACAO)
+  )].sort();
+  msState.compApres.all = availApres;
+  [...msState.compApres.selected].forEach(a => { if (!availApres.includes(a)) msState.compApres.selected.delete(a); });
+  const apresSection = document.getElementById('compApresSection');
+  if (apresSection) apresSection.style.display = availApres.length > 1 ? '' : 'none';
+  const apresCount = document.getElementById('compApresAvailCount');
+  if (apresCount) apresCount.textContent = availApres.length > 1 ? `(${availApres.length})` : '';
+
+  // Re-render dropdowns
+  const qSubs = document.getElementById('compSubsInput')?.value || '';
+  const qLabs = document.getElementById('compLabsInput')?.value || '';
+  const qApres = document.getElementById('compApresInput')?.value || '';
+  renderMsOptions('compSubs', qSubs);
+  renderMsOptions('compLabs', qLabs);
+  renderMsOptions('compApres', qApres);
+  renderMsTags('compSubs');
+  renderMsTags('compLabs');
+  renderMsTags('compApres');
 }
 
 function renderMsOptions(id, q) {
@@ -1053,8 +1133,13 @@ function toggleMsItem(id, val) {
   const s = msState[id].selected;
   if (s.has(val)) s.delete(val); else s.add(val);
   const q = document.getElementById(id+'Input').value;
-  renderMsOptions(id, q);
-  renderMsTags(id);
+  // Cross-filter for comparador
+  if (id === 'compSubs' || id === 'compLabs' || id === 'compApres') {
+    updateCompCrossFilters(id);
+  } else {
+    renderMsOptions(id, q);
+    renderMsTags(id);
+  }
 }
 
 function renderMsTags(id) {
@@ -1078,19 +1163,28 @@ function renderMsTags(id) {
 function selectAllMs(id) {
   const { all, selected } = msState[id];
   all.forEach(i => selected.add(i));
-  renderMsOptions(id, document.getElementById(id+'Input').value);
-  renderMsTags(id);
+  if (id === 'compSubs' || id === 'compLabs' || id === 'compApres') {
+    updateCompCrossFilters(id);
+  } else {
+    renderMsOptions(id, document.getElementById(id+'Input').value);
+    renderMsTags(id);
+  }
 }
 function clearMs(id) {
   msState[id].selected.clear();
-  renderMsOptions(id, '');
-  renderMsTags(id);
+  if (id === 'compSubs' || id === 'compLabs' || id === 'compApres') {
+    updateCompCrossFilters(id);
+  } else {
+    renderMsOptions(id, '');
+    renderMsTags(id);
+  }
 }
 
 // ==================== COMPARADOR ====================
 function renderComparador() {
   const subs = [...msState.compSubs.selected];
   const labs = [...msState.compLabs.selected];
+  const apres = [...msState.compApres.selected];
   if (!subs.length && !labs.length) { showToast('Selecione ao menos uma substância ou laboratório', 'error'); return; }
 
   document.getElementById('emptyStateComp').style.display = 'none';
@@ -1100,12 +1194,13 @@ function renderComparador() {
   const activeSubs = subs.length ? subs : allSubstances.filter(s => labs.some(l => substanceMap[s]?.some(r=>r.LABORATORIO===l)));
   const activeLabs = labs.length ? labs : [...new Set(activeSubs.flatMap(s=>(substanceMap[s]||[]).map(r=>r.LABORATORIO)))];
 
-  // For each subs×labs: min price
+  // For each subs×labs: min price (filtered by apresentação if selected)
   const matrix = {};
   activeSubs.forEach(sub => {
     matrix[sub] = {};
     activeLabs.forEach(lab => {
-      const rows = (substanceMap[sub]||[]).filter(r=>r.LABORATORIO===lab);
+      let rows = (substanceMap[sub]||[]).filter(r=>r.LABORATORIO===lab);
+      if (apres.length > 0) rows = rows.filter(r => apres.includes(r.APRESENTACAO));
       const prices = rows.map(r=>formatPrice(r.PRECO)).filter(p=>p!==null);
       matrix[sub][lab] = prices.length ? Math.min(...prices) : null;
     });
@@ -1198,8 +1293,22 @@ function renderComparador() {
 }
 
 function clearComparador() {
-  clearMs('compSubs');
-  clearMs('compLabs');
+  msState.compSubs.selected.clear();
+  msState.compLabs.selected.clear();
+  msState.compApres.selected.clear();
+  msState.compSubs.all = allSubstances;
+  msState.compLabs.all = allLabs;
+  msState.compApres.all = [];
+  renderMsOptions('compSubs', '');
+  renderMsOptions('compLabs', '');
+  renderMsOptions('compApres', '');
+  renderMsTags('compSubs');
+  renderMsTags('compLabs');
+  renderMsTags('compApres');
+  const countSubs = document.getElementById('compSubsAvailCount');
+  if (countSubs) countSubs.textContent = '';
+  const apresSection = document.getElementById('compApresSection');
+  if (apresSection) apresSection.style.display = 'none';
   document.getElementById('emptyStateComp').style.display = '';
   document.getElementById('comparadorContent').style.display = 'none';
 }
@@ -1352,10 +1461,12 @@ function exportarTabelaLab() {
 function exportarComparador() {
   const subs = [...msState.compSubs.selected];
   const labs = [...msState.compLabs.selected];
+  const apres = [...msState.compApres.selected];
   if (!subs.length && !labs.length) { showToast('Configure o comparador primeiro', 'error'); return; }
-  const rows = allRecords.filter(r =>
+  let rows = allRecords.filter(r =>
     (subs.length===0||subs.includes(r.SUBSTANCIA)) &&
-    (labs.length===0||labs.includes(r.LABORATORIO))
+    (labs.length===0||labs.includes(r.LABORATORIO)) &&
+    (apres.length===0||apres.includes(r.APRESENTACAO))
   );
   const ws = XLSX.utils.json_to_sheet(rows.map(r=>({
     Substância: r.SUBSTANCIA,
