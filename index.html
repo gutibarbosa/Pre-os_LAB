@@ -286,8 +286,50 @@
           </div>
         </div>
 
+        <div class="sidebar-section">
+          <div class="sidebar-title">🔢 EAN</div>
+          <div class="ms-wrap" id="eanSearchWrap">
+            <div class="ms-box" id="eanSearchBox" onclick="toggleMs('eanSearch')">
+              <span class="ms-placeholder" id="eanSearchPlaceholder">Buscar por EAN…</span>
+              <input type="text" class="ms-input" id="eanSearchInput" placeholder="" oninput="filterMs('eanSearch',this.value)" onclick="event.stopPropagation()">
+            </div>
+            <div class="ms-dropdown" id="eanSearchDropdown">
+              <div class="ms-select-all"><span onclick="selectAllMs('eanSearch')">Selecionar todos</span><span onclick="clearMs('eanSearch')">Limpar</span></div>
+              <div id="eanSearchOptions"></div>
+            </div>
+          </div>
+        </div>
+
+        <div class="sidebar-section">
+          <div class="sidebar-title">📦 Produto</div>
+          <div class="ms-wrap" id="prodSearchWrap">
+            <div class="ms-box" id="prodSearchBox" onclick="toggleMs('prodSearch')">
+              <span class="ms-placeholder" id="prodSearchPlaceholder">Buscar por produto…</span>
+              <input type="text" class="ms-input" id="prodSearchInput" placeholder="" oninput="filterMs('prodSearch',this.value)" onclick="event.stopPropagation()">
+            </div>
+            <div class="ms-dropdown" id="prodSearchDropdown">
+              <div class="ms-select-all"><span onclick="selectAllMs('prodSearch')">Selecionar todos</span><span onclick="clearMs('prodSearch')">Limpar</span></div>
+              <div id="prodSearchOptions"></div>
+            </div>
+          </div>
+        </div>
+
+        <div class="sidebar-section">
+          <div class="sidebar-title">📋 Apresentação (busca)</div>
+          <div class="ms-wrap" id="apresSearchWrap">
+            <div class="ms-box" id="apresSearchBox" onclick="toggleMs('apresSearch')">
+              <span class="ms-placeholder" id="apresSearchPlaceholder">Buscar por apresentação…</span>
+              <input type="text" class="ms-input" id="apresSearchInput" placeholder="" oninput="filterMs('apresSearch',this.value)" onclick="event.stopPropagation()">
+            </div>
+            <div class="ms-dropdown" id="apresSearchDropdown">
+              <div class="ms-select-all"><span onclick="selectAllMs('apresSearch')">Selecionar todos</span><span onclick="clearMs('apresSearch')">Limpar</span></div>
+              <div id="apresSearchOptions"></div>
+            </div>
+          </div>
+        </div>
+
         <div class="sidebar-section" id="apresSection" style="display:none">
-          <div class="sidebar-title">💊 Apresentação</div>
+          <div class="sidebar-title">💊 Refinar apresentação</div>
           <div class="apres-filter" id="apresFilter"></div>
         </div>
 
@@ -388,7 +430,7 @@
         Selecionar arquivo .xlsx
         <input type="file" id="fileInputMain" accept=".xlsx,.xls">
       </label>
-      <p style="font-size:12px;color:var(--muted);margin-top:12px;">Compatível com BASE_DADOS.xlsx · aba "FILTRADO DASH"</p>
+      <p style="font-size:12px;color:var(--muted);margin-top:12px;">Compatível com BASE_DADOS.xlsx · aba "DASHBOARD_BASE" (lê também HISTORICO_COMPRA e COTAÇÕES, se presentes)</p>
     </div>
 
     <!-- ABA: SUBSTÂNCIA -->
@@ -534,6 +576,38 @@
         <p>Carregue a planilha para ver a visão executiva.</p>
       </div>
       <div id="execContent">
+        <div class="panel-header" style="margin-bottom:8px">📦 Indicadores de Compras</div>
+        <div class="kpi-grid" id="comprasKpiRow">
+          <div class="kpi purple"><div class="kpi-label">Total de medicamentos</div><div class="kpi-value" id="kpiTotalMeds">—</div></div>
+          <div class="kpi"><div class="kpi-label">Total de laboratórios</div><div class="kpi-value" id="kpiTotalLabsCompras">—</div></div>
+          <div class="kpi highlight"><div class="kpi-label">Economia potencial</div><div class="kpi-value" id="kpiEconomiaPotencial">—</div></div>
+          <div class="kpi warn"><div class="kpi-label">Itens sem cotação</div><div class="kpi-value" id="kpiSemCotacao">—</div></div>
+          <div class="kpi danger"><div class="kpi-label">Itens com aumento de preço</div><div class="kpi-value" id="kpiAumento">—</div></div>
+          <div class="kpi"><div class="kpi-label">Itens com redução de preço</div><div class="kpi-value" id="kpiReducao">—</div></div>
+        </div>
+
+        <div class="two-col">
+          <div class="panel">
+            <div class="panel-header">💰 Top 15 Substâncias por Economia Potencial</div>
+            <div class="chart-wrap"><canvas id="economiaChart" style="max-height:360px"></canvas></div>
+          </div>
+          <div class="panel">
+            <div class="panel-header">🏆 Ranking de Competitividade entre Laboratórios</div>
+            <div class="chart-wrap"><canvas id="competitividadeChart" style="max-height:360px"></canvas></div>
+          </div>
+        </div>
+
+        <div class="panel">
+          <div class="panel-header">📈 Evolução de Preço por Item</div>
+          <div class="search-wrap" style="max-width:480px;margin-bottom:12px">
+            <span class="search-icon">🔎</span>
+            <input type="text" class="search-input" id="evolucaoSearchInput" placeholder="Buscar item por produto, laboratório ou apresentação…" autocomplete="off" oninput="filterEvolucaoSearch(this.value)" onfocus="filterEvolucaoSearch(this.value)">
+            <div class="single-dropdown" id="evolucaoDropdown"></div>
+          </div>
+          <div id="evolucaoEmpty" style="color:var(--muted);font-size:13px">Selecione um item para ver o histórico de compras e cotações.</div>
+          <div class="chart-wrap" id="evolucaoChartWrap" style="display:none"><canvas id="evolucaoChart" style="max-height:320px"></canvas></div>
+        </div>
+
         <div class="kpi-grid" id="execKpiRow">
           <div class="kpi purple"><div class="kpi-label">Total de substâncias</div><div class="kpi-value" id="execKpiSubs">—</div></div>
           <div class="kpi"><div class="kpi-label">Total de laboratórios</div><div class="kpi-value" id="execKpiLabs">—</div></div>
@@ -546,7 +620,7 @@
 
         <div class="two-col">
           <div class="panel">
-            <div class="panel-header">Ranking de Laboratórios por Preço Médio</div>
+            <div class="panel-header">Ranking de Laboratórios por Preço Médio (Top Laboratórios Mais Baratos)</div>
             <div class="chart-wrap"><canvas id="execRankChart" style="max-height:360px"></canvas></div>
           </div>
           <div class="panel">
@@ -577,6 +651,9 @@ let substanceMap = {};    // substancia -> [records]
 let allSubstances = [];
 let allLabs = [];
 let allRecords = [];
+let itemsById = {};        // ID_ITEM -> record (DASHBOARD_BASE)
+let historicoCompras = []; // [{ID_ITEM, DATA, VALOR}]
+let historicoCotacoes = []; // [{ID_ITEM, DATA, VALOR_COTADO}]
 
 let currentSubstance = null;
 let currentTipo = '';
@@ -595,6 +672,9 @@ let compChartRank = null;
 let compChartAmpl = null;
 
 let execCharts = {};
+let evolucaoItemsList = [];
+let evolucaoChartInstance = null;
+let evolucaoSelectedId = null;
 
 let currentTab = 'substancia';
 
@@ -613,6 +693,7 @@ function normalize(s) {
 }
 function buildColMap(keys) {
   const targets = {
+    ID_ITEM:      ['IDITEM'],
     SUBSTANCIA:   ['SUBSTANCIA','SUBSTÂNCIA'],
     LABORATORIO:  ['LABORATORIO','LABORATÓRIO'],
     EAN1:         ['EAN1','EAN 1','EAN'],
@@ -621,6 +702,16 @@ function buildColMap(keys) {
     TIPO_PRODUTO: ['TIPOPRODUTO','TIPO_PRODUTO'],
     REGIME_PRECO: ['REGIMEDEPRECO','REGIME_PRECO','REGIMEDEPRE','REGIMEDEPREÇO'],
     PRECO:        ['PRECO','PREÇO'],
+    QTD:          ['QTD','QUANTIDADE'],
+    // Campos consolidados pela própria planilha (aba DASHBOARD_BASE)
+    ULTIMA_COMPRA:          ['ULTIMACOMPRA'],
+    ULTIMO_PRECO_PAGO:      ['ULTIMOPRECOPAGO'],
+    MENOR_PRECO_HISTORICO:  ['MENORPRECOHISTORICO'],
+    MAIOR_PRECO_HISTORICO:  ['MAIORPRECOHISTORICO'],
+    PRECO_MEDIO_HISTORICO:  ['PRECOMEDIOHISTORICO'],
+    ULTIMA_COTACAO:         ['ULTIMACOTACAO'],
+    ECONOMIA_POTENCIAL:     ['ECONOMIAPOTENCIAL'],
+    STATUS_PRECO:           ['STATUSPRECO'],
   };
   const map = {};
   for (const [field, variants] of Object.entries(targets)) {
@@ -628,6 +719,18 @@ function buildColMap(keys) {
       || keys.find(k => normalize(k).includes(normalize(field.split('_')[0]))) || '';
   }
   return map;
+}
+// Converte valor de data vindo da planilha (Date, serial ou string) para um Date ou null
+function parseSheetDate(v) {
+  if (v === null || v === undefined || v === '') return null;
+  if (v instanceof Date) return isNaN(v) ? null : v;
+  if (typeof v === 'number') return new Date(Math.round((v - 25569) * 86400 * 1000));
+  const d = new Date(v);
+  return isNaN(d) ? null : d;
+}
+function fmtData(v) {
+  const d = parseSheetDate(v);
+  return d ? d.toLocaleDateString('pt-BR') : '—';
 }
 function formatPrice(v) {
   if (v === null || v === undefined || v === '') return null;
@@ -643,6 +746,14 @@ function pct(a,b) {
 }
 
 // ==================== FILE READING ====================
+function findSheet(wb, candidates) {
+  const norm = s => normalize(s);
+  for (const c of candidates) {
+    const found = wb.SheetNames.find(n => norm(n) === norm(c));
+    if (found) return found;
+  }
+  return null;
+}
 function handleFile(file) {
   if (!file) return;
   if (!file.name.match(/\.xlsx?$/i)) { showToast('❌ Use um arquivo .xlsx', 'error'); return; }
@@ -650,13 +761,14 @@ function handleFile(file) {
   const reader = new FileReader();
   reader.onload = e => {
     try {
-      const wb = XLSX.read(e.target.result, { type: 'array' });
-      const sheetName = wb.SheetNames.includes('FILTRADO DASH') ? 'FILTRADO DASH' : wb.SheetNames[0];
+      const wb = XLSX.read(e.target.result, { type: 'array', cellDates: true });
+      const sheetName = findSheet(wb, ['DASHBOARD_BASE','FILTRADO DASH']) || wb.SheetNames[0];
       const ws = wb.Sheets[sheetName];
       const raw = XLSX.utils.sheet_to_json(ws, { defval: '' });
       if (!raw.length) { showToast('❌ Planilha vazia.', 'error'); return; }
       const colMap = buildColMap(Object.keys(raw[0]));
       const records = raw.map(row => ({
+        ID_ITEM:      String(row[colMap.ID_ITEM]      ?? '').trim(),
         SUBSTANCIA:   String(row[colMap.SUBSTANCIA]   || '').trim(),
         LABORATORIO:  String(row[colMap.LABORATORIO]  || '').trim(),
         EAN1:         String(row[colMap.EAN1]         || '').trim(),
@@ -665,22 +777,50 @@ function handleFile(file) {
         TIPO_PRODUTO: String(row[colMap.TIPO_PRODUTO] || '').trim(),
         REGIME_PRECO: String(row[colMap.REGIME_PRECO] || '').trim(),
         PRECO:        row[colMap.PRECO],
+        QTD:          row[colMap.QTD],
+        ULTIMA_COMPRA:         row[colMap.ULTIMA_COMPRA],
+        ULTIMO_PRECO_PAGO:     row[colMap.ULTIMO_PRECO_PAGO],
+        MENOR_PRECO_HISTORICO: row[colMap.MENOR_PRECO_HISTORICO],
+        MAIOR_PRECO_HISTORICO: row[colMap.MAIOR_PRECO_HISTORICO],
+        PRECO_MEDIO_HISTORICO: row[colMap.PRECO_MEDIO_HISTORICO],
+        ULTIMA_COTACAO:        row[colMap.ULTIMA_COTACAO],
+        ECONOMIA_POTENCIAL:    row[colMap.ECONOMIA_POTENCIAL],
+        STATUS_PRECO:          String(row[colMap.STATUS_PRECO] || '').trim(),
       })).filter(r => r.SUBSTANCIA);
-      loadData(records, file.name, sheetName);
+
+      // Histórico de compras e cotações (sob demanda, só usado no gráfico de evolução)
+      const histSheetName = findSheet(wb, ['HISTORICO_COMPRA','COMPRAS']);
+      const cotSheetName = findSheet(wb, ['COTAÇÕES','COTACOES']);
+      const historicoCompras = histSheetName
+        ? XLSX.utils.sheet_to_json(wb.Sheets[histSheetName], { defval: '' })
+            .map(r => ({ ID_ITEM: String(r.ID_ITEM ?? '').trim(), DATA: r.DATA, VALOR: r.VALOR }))
+            .filter(r => r.ID_ITEM)
+        : [];
+      const historicoCotacoes = cotSheetName
+        ? XLSX.utils.sheet_to_json(wb.Sheets[cotSheetName], { defval: '' })
+            .map(r => ({ ID_ITEM: String(r.ID_ITEM ?? '').trim(), DATA: r.DATA, VALOR_COTADO: r.VALOR_COTADO }))
+            .filter(r => r.ID_ITEM)
+        : [];
+
+      loadData(records, file.name, sheetName, historicoCompras, historicoCotacoes);
     } catch(err) { showToast('❌ Erro: ' + err.message, 'error'); }
   };
   reader.readAsArrayBuffer(file);
 }
 
-function loadData(records, fileName, sheetName) {
+function loadData(records, fileName, sheetName, histCompras, histCotacoes) {
   allRecords = records;
   substanceMap = {};
+  itemsById = {};
   records.forEach(r => {
     if (!substanceMap[r.SUBSTANCIA]) substanceMap[r.SUBSTANCIA] = [];
     substanceMap[r.SUBSTANCIA].push(r);
+    if (r.ID_ITEM) itemsById[r.ID_ITEM] = r;
   });
   allSubstances = Object.keys(substanceMap).sort();
   allLabs = [...new Set(records.map(r => r.LABORATORIO))].filter(Boolean).sort();
+  historicoCompras = histCompras || [];
+  historicoCotacoes = histCotacoes || [];
 
   document.getElementById('uploadArea').style.display = 'none';
   document.getElementById('navTabs').style.display = '';
@@ -694,6 +834,9 @@ function loadData(records, fileName, sheetName) {
   msState.labLabs.selected.clear();
   populateMsOptions('substSubs', allSubstances);
   populateMsOptions('labLabs', allLabs);
+  populateMsOptions('eanSearch', [...new Set(records.map(r=>r.EAN1))].filter(Boolean).sort());
+  populateMsOptions('prodSearch', [...new Set(records.map(r=>r.PRODUTO))].filter(Boolean).sort());
+  populateMsOptions('apresSearch', [...new Set(records.map(r=>r.APRESENTACAO))].filter(Boolean).sort());
   document.getElementById('tabSubstancia').style.display = '';
   document.getElementById('tabLaboratorio').style.display = 'none';
   document.getElementById('tabComparador').style.display = 'none';
@@ -705,17 +848,18 @@ function loadData(records, fileName, sheetName) {
   document.getElementById('apresSection').style.display = 'none';
 
   document.getElementById('headerSubtitle').textContent =
-    `${fileName} · "${sheetName}" · ${records.length.toLocaleString('pt-BR')} produtos · ${allSubstances.length.toLocaleString('pt-BR')} substâncias`;
+    `${fileName} · "${sheetName}" · ${records.length.toLocaleString('pt-BR')} itens · ${allSubstances.length.toLocaleString('pt-BR')} substâncias`;
 
   // Populate comparador multi-selects
   populateMsOptions('compSubs', allSubstances);
   populateMsOptions('compLabs', allLabs);
   populateMsOptions('compApres', []);
-  const apresSection = document.getElementById('compApresSection');
-  if (apresSection) apresSection.style.display = 'none';
+  const apresSectionComp = document.getElementById('compApresSection');
+  if (apresSectionComp) apresSectionComp.style.display = 'none';
 
+  populateEvolucaoSearch();
   renderExecutivo();
-  showToast(`✅ ${records.length.toLocaleString('pt-BR')} produtos carregados`, 'success');
+  showToast(`✅ ${records.length.toLocaleString('pt-BR')} itens carregados`, 'success');
 }
 
 ['fileInputMain','fileInputHeader'].forEach(id => {
@@ -811,7 +955,11 @@ function sortTable(key) {
 // ==================== RENDER SUBSTÂNCIA ====================
 function renderSubstancia() {
   const selSubs = [...msState.substSubs.selected];
-  if (!selSubs.length) {
+  const selEans = [...msState.eanSearch.selected];
+  const selProds = [...msState.prodSearch.selected];
+  const selApresBusca = [...msState.apresSearch.selected];
+  const anyFilter = selSubs.length || selEans.length || selProds.length || selApresBusca.length;
+  if (!anyFilter) {
     document.getElementById('emptyState').style.display = 'block';
     document.getElementById('kpiRow').style.display = 'none';
     document.getElementById('winnerBanner').style.display = 'none';
@@ -820,8 +968,11 @@ function renderSubstancia() {
     return;
   }
 
-  // Aggregate rows from all selected substances
-  let rows = selSubs.flatMap(s => substanceMap[s] || []);
+  // Aggregate rows from all selected substances (ou de toda a base, se a busca for por EAN/Produto/Apresentação)
+  let rows = selSubs.length ? selSubs.flatMap(s => substanceMap[s] || []) : allRecords;
+  if (selEans.length) rows = rows.filter(r => selEans.includes(r.EAN1));
+  if (selProds.length) rows = rows.filter(r => selProds.includes(r.PRODUTO));
+  if (selApresBusca.length) rows = rows.filter(r => selApresBusca.includes(r.APRESENTACAO));
   let filtered = currentTipo ? rows.filter(r => r.TIPO_PRODUTO === currentTipo) : rows;
   if (currentApres.size > 0) filtered = filtered.filter(r => currentApres.has(r.APRESENTACAO));
 
@@ -878,8 +1029,8 @@ function renderSubstancia() {
     document.getElementById('winnerPrice').textContent = fmtBRL(minPrice);
   } else { banner.style.display = 'none'; }
 
-  // Show SUBSTANCIA column in table when multiple substances selected
-  const multiSub = selSubs.length > 1;
+  // Show SUBSTANCIA column in table when multiple substances selected (ou resultado abrange várias substâncias)
+  const multiSub = selSubs.length > 1 || (!selSubs.length && new Set(filtered.map(r=>r.SUBSTANCIA)).size > 1);
   document.querySelectorAll('.col-substancia-header').forEach(el => el.style.display = multiSub ? '' : 'none');
 
   document.getElementById('tableCount').textContent = sorted.length + ' itens';
@@ -1075,6 +1226,18 @@ const msState = {
   compSubs: { all: [], selected: new Set() },
   compLabs: { all: [], selected: new Set() },
   compApres: { all: [], selected: new Set() },
+  eanSearch:   { all: [], selected: new Set() },
+  prodSearch:  { all: [], selected: new Set() },
+  apresSearch: { all: [], selected: new Set() },
+};
+// Callback disparado após mudar a seleção de um ms id (lookup em vez de if/else
+// repetido — novos campos de busca passam a exigir só 1 linha aqui)
+const msOnChange = {
+  substSubs:   () => renderSubstancia(),
+  eanSearch:   () => renderSubstancia(),
+  prodSearch:  () => renderSubstancia(),
+  apresSearch: () => renderSubstancia(),
+  labLabs:     () => selectLabMulti(),
 };
 
 function populateMsOptions(id, items) {
@@ -1163,7 +1326,7 @@ function renderMsOptions(id, q) {
 function toggleMs(id) {
   const drop = document.getElementById(id+'Dropdown');
   drop.classList.toggle('open');
-  if (drop.classList.contains('open')) document.getElementById(id+'Input').focus();
+  if (drop.classList.contains('open')) document.getElementById(id+'Input')?.focus();
 }
 
 function filterMs(id, q) {
@@ -1177,14 +1340,10 @@ function toggleMsItem(id, val) {
   const q = document.getElementById(id+'Input')?.value || '';
   if (id === 'compSubs' || id === 'compLabs' || id === 'compApres') {
     updateCompCrossFilters(id);
-  } else if (id === 'substSubs') {
+  } else if (msOnChange[id]) {
     renderMsOptions(id, q);
     renderMsTags(id);
-    renderSubstancia();
-  } else if (id === 'labLabs') {
-    renderMsOptions(id, q);
-    renderMsTags(id);
-    selectLabMulti();
+    msOnChange[id]();
   } else {
     renderMsOptions(id, q);
     renderMsTags(id);
@@ -1214,14 +1373,10 @@ function selectAllMs(id) {
   all.forEach(i => selected.add(i));
   if (id === 'compSubs' || id === 'compLabs' || id === 'compApres') {
     updateCompCrossFilters(id);
-  } else if (id === 'substSubs') {
+  } else if (msOnChange[id]) {
     renderMsOptions(id, document.getElementById(id+'Input')?.value || '');
     renderMsTags(id);
-    renderSubstancia();
-  } else if (id === 'labLabs') {
-    renderMsOptions(id, document.getElementById(id+'Input')?.value || '');
-    renderMsTags(id);
-    selectLabMulti();
+    msOnChange[id]();
   } else {
     renderMsOptions(id, document.getElementById(id+'Input').value);
     renderMsTags(id);
@@ -1231,14 +1386,10 @@ function clearMs(id) {
   msState[id].selected.clear();
   if (id === 'compSubs' || id === 'compLabs' || id === 'compApres') {
     updateCompCrossFilters(id);
-  } else if (id === 'substSubs') {
+  } else if (msOnChange[id]) {
     renderMsOptions(id, '');
     renderMsTags(id);
-    renderSubstancia();
-  } else if (id === 'labLabs') {
-    renderMsOptions(id, '');
-    renderMsTags(id);
-    selectLabMulti();
+    msOnChange[id]();
   } else {
     renderMsOptions(id, '');
     renderMsTags(id);
@@ -1382,6 +1533,10 @@ function clearComparador() {
 function renderExecutivo() {
   if (!allRecords.length) return;
 
+  renderComprasKPIs();
+  renderEconomiaChart();
+  renderCompetitividadeChart();
+
   const subs = allSubstances.length;
   const labs = allLabs.length;
   const prods = allRecords.length;
@@ -1485,25 +1640,196 @@ function renderExecutivo() {
   });
 }
 
-// ==================== EXPORT ====================
+// ==================== INDICADORES DE COMPRAS (DASHBOARD_BASE) ====================
+function renderComprasKPIs() {
+  let economiaTotal = 0, semCotacao = 0, aumento = 0, reducao = 0;
+  allRecords.forEach(r => {
+    const eco = formatPrice(r.ECONOMIA_POTENCIAL);
+    if (eco !== null && eco > 0) economiaTotal += eco;
+    if (r.STATUS_PRECO === 'Aumento') aumento++;
+    else if (r.STATUS_PRECO === 'Redução') reducao++;
+    else if (r.STATUS_PRECO === 'Sem cotação' || !r.STATUS_PRECO) semCotacao++;
+  });
+  document.getElementById('kpiTotalMeds').textContent = allRecords.length.toLocaleString('pt-BR');
+  document.getElementById('kpiTotalLabsCompras').textContent = allLabs.length.toLocaleString('pt-BR');
+  document.getElementById('kpiEconomiaPotencial').textContent = fmtBRL(economiaTotal);
+  document.getElementById('kpiSemCotacao').textContent = semCotacao.toLocaleString('pt-BR');
+  document.getElementById('kpiAumento').textContent = aumento.toLocaleString('pt-BR');
+  document.getElementById('kpiReducao').textContent = reducao.toLocaleString('pt-BR');
+}
+
+function renderEconomiaChart() {
+  const bySub = {};
+  allRecords.forEach(r => {
+    const eco = formatPrice(r.ECONOMIA_POTENCIAL);
+    if (eco === null || eco <= 0) return;
+    bySub[r.SUBSTANCIA] = (bySub[r.SUBSTANCIA]||0) + eco;
+  });
+  const top = Object.entries(bySub).sort((a,b)=>b[1]-a[1]).slice(0,15);
+  if (execCharts.economia) execCharts.economia.destroy();
+  const c = document.getElementById('economiaChart');
+  c.style.height = Math.max(200, top.length*30+60)+'px';
+  execCharts.economia = new Chart(c.getContext('2d'), {
+    type:'bar',
+    data:{ labels: top.map(([s])=>s.length>28?s.slice(0,28)+'…':s),
+      datasets:[{label:'Economia potencial', data: top.map(([,v])=>v),
+        backgroundColor:'rgba(0,201,167,0.65)', borderColor:'#00c9a7', borderWidth:1.5, borderRadius:4}]
+    },
+    options:{indexAxis:'y',responsive:true,maintainAspectRatio:false,
+      plugins:{legend:{display:false},tooltip:{callbacks:{label:ctx=>' '+fmtBRL(ctx.parsed.x)}}},
+      scales:{x:{grid:{color:'rgba(42,51,68,0.6)'},ticks:{color:'#8b949e',font:{size:10},callback:v=>'R$'+v.toLocaleString('pt-BR')}},
+              y:{grid:{display:false},ticks:{color:'#e6edf3',font:{size:10}}}}
+    }
+  });
+}
+
+function renderCompetitividadeChart() {
+  // Para cada combinação Substância+Apresentação, o laboratório com menor preço "vence"
+  const groups = {};
+  allRecords.forEach(r => {
+    const p = formatPrice(r.PRECO);
+    if (p === null || !r.LABORATORIO) return;
+    const key = r.SUBSTANCIA + '|' + r.APRESENTACAO;
+    if (!groups[key] || p < groups[key].price) groups[key] = { price: p, lab: r.LABORATORIO };
+  });
+  const wins = {};
+  Object.values(groups).forEach(g => { wins[g.lab] = (wins[g.lab]||0)+1; });
+  const top = Object.entries(wins).sort((a,b)=>b[1]-a[1]).slice(0,15);
+  if (execCharts.competitividade) execCharts.competitividade.destroy();
+  const c = document.getElementById('competitividadeChart');
+  c.style.height = Math.max(200, top.length*30+60)+'px';
+  execCharts.competitividade = new Chart(c.getContext('2d'), {
+    type:'bar',
+    data:{ labels: top.map(([l])=>l.length>26?l.slice(0,26)+'…':l),
+      datasets:[{label:'Itens em que é o mais barato', data: top.map(([,v])=>v),
+        backgroundColor:'rgba(123,97,255,0.6)', borderColor:'#7b61ff', borderWidth:1.5, borderRadius:4}]
+    },
+    options:{indexAxis:'y',responsive:true,maintainAspectRatio:false,
+      plugins:{legend:{display:false}},
+      scales:{x:{grid:{color:'rgba(42,51,68,0.6)'},ticks:{color:'#8b949e',font:{size:10},stepSize:1}},
+              y:{grid:{display:false},ticks:{color:'#e6edf3',font:{size:10}}}}
+    }
+  });
+}
+
+// ==================== EVOLUÇÃO DE PREÇO POR ITEM ====================
+function populateEvolucaoSearch() {
+  evolucaoItemsList = allRecords.filter(r=>r.ID_ITEM).map(r => ({
+    id: r.ID_ITEM,
+    label: `${r.PRODUTO} · ${r.LABORATORIO} · ${r.APRESENTACAO}`
+  }));
+  evolucaoSelectedId = null;
+  const input = document.getElementById('evolucaoSearchInput');
+  const drop = document.getElementById('evolucaoDropdown');
+  if (input) input.value = '';
+  if (drop) { drop.classList.remove('open'); drop.innerHTML = ''; }
+  const empty = document.getElementById('evolucaoEmpty');
+  if (empty) { empty.style.display = ''; empty.textContent = 'Selecione um item para ver o histórico de compras e cotações.'; }
+  const wrap = document.getElementById('evolucaoChartWrap');
+  if (wrap) wrap.style.display = 'none';
+}
+
+function filterEvolucaoSearch(q) {
+  const drop = document.getElementById('evolucaoDropdown');
+  if (!q || q.length < 2) { drop.classList.remove('open'); drop.innerHTML = ''; return; }
+  const ql = q.toLowerCase();
+  const matches = evolucaoItemsList.filter(it => it.label.toLowerCase().includes(ql)).slice(0,30);
+  if (!matches.length) {
+    drop.innerHTML = `<div class="drop-item" style="color:var(--muted)">Nenhum resultado</div>`;
+  } else {
+    drop.innerHTML = matches.map(it =>
+      `<div class="drop-item" onclick="selectEvolucaoItem('${it.id}')">${(it.label.length>70?it.label.slice(0,70)+'…':it.label).replace(/</g,'&lt;')}</div>`
+    ).join('');
+  }
+  drop.classList.add('open');
+}
+
+function selectEvolucaoItem(idItem) {
+  evolucaoSelectedId = idItem;
+  const item = itemsById[idItem];
+  const input = document.getElementById('evolucaoSearchInput');
+  if (input) input.value = item ? `${item.PRODUTO} · ${item.LABORATORIO} · ${item.APRESENTACAO}` : idItem;
+  const drop = document.getElementById('evolucaoDropdown');
+  drop.classList.remove('open');
+  drop.innerHTML = '';
+  renderEvolucaoChart(idItem);
+}
+
+function renderEvolucaoChart(idItem) {
+  const compras = historicoCompras.filter(r=>r.ID_ITEM===idItem)
+    .map(r=>({x: parseSheetDate(r.DATA)?.getTime(), y: formatPrice(r.VALOR)}))
+    .filter(p=>p.x && p.y!==null).sort((a,b)=>a.x-b.x);
+  const cotacoes = historicoCotacoes.filter(r=>r.ID_ITEM===idItem)
+    .map(r=>({x: parseSheetDate(r.DATA)?.getTime(), y: formatPrice(r.VALOR_COTADO)}))
+    .filter(p=>p.x && p.y!==null).sort((a,b)=>a.x-b.x);
+
+  const empty = document.getElementById('evolucaoEmpty');
+  const wrap = document.getElementById('evolucaoChartWrap');
+  if (!compras.length && !cotacoes.length) {
+    empty.textContent = 'Nenhum histórico de compras ou cotações encontrado para este item.';
+    empty.style.display = '';
+    wrap.style.display = 'none';
+    return;
+  }
+  empty.style.display = 'none';
+  wrap.style.display = '';
+  if (evolucaoChartInstance) evolucaoChartInstance.destroy();
+  evolucaoChartInstance = new Chart(document.getElementById('evolucaoChart').getContext('2d'), {
+    type:'line',
+    data:{ datasets:[
+      { label:'Preço pago (compra)', data: compras, borderColor:'#7b61ff', backgroundColor:'rgba(123,97,255,0.15)', tension:0.2, pointRadius:4, borderWidth:2 },
+      { label:'Preço cotado', data: cotacoes, borderColor:'#ffb703', backgroundColor:'rgba(255,183,3,0.1)', borderDash:[5,4], tension:0.2, pointRadius:4, borderWidth:2 }
+    ]},
+    options:{ responsive:true, maintainAspectRatio:false,
+      plugins:{ legend:{labels:{color:'#8b949e',font:{size:11}}},
+        tooltip:{callbacks:{
+          title: ctx => new Date(ctx[0].parsed.x).toLocaleDateString('pt-BR'),
+          label: ctx => ` ${ctx.dataset.label}: ${fmtBRL(ctx.parsed.y)}`
+        }} },
+      scales:{ x:{ type:'linear', grid:{color:'rgba(42,51,68,0.6)'},
+                   ticks:{color:'#8b949e',font:{size:10}, callback:v=>new Date(v).toLocaleDateString('pt-BR')} },
+               y:{ grid:{color:'rgba(42,51,68,0.6)'}, ticks:{color:'#8b949e',font:{size:10},callback:v=>'R$'+v.toLocaleString('pt-BR')} } }
+    }
+  });
+}
 function exportarTabela() {
   const selSubs = [...msState.substSubs.selected];
-  if (!selSubs.length) { showToast('Selecione uma substância primeiro', 'error'); return; }
-  const rows = selSubs.flatMap(s => substanceMap[s] || []);
+  const selEans = [...msState.eanSearch.selected];
+  const selProds = [...msState.prodSearch.selected];
+  const selApresBusca = [...msState.apresSearch.selected];
+  if (!selSubs.length && !selEans.length && !selProds.length && !selApresBusca.length) {
+    showToast('Selecione ao menos um filtro primeiro', 'error'); return;
+  }
+  let rows = selSubs.length ? selSubs.flatMap(s => substanceMap[s] || []) : allRecords;
+  if (selEans.length) rows = rows.filter(r => selEans.includes(r.EAN1));
+  if (selProds.length) rows = rows.filter(r => selProds.includes(r.PRODUTO));
+  if (selApresBusca.length) rows = rows.filter(r => selApresBusca.includes(r.APRESENTACAO));
   let filtered = currentTipo ? rows.filter(r=>r.TIPO_PRODUTO===currentTipo) : rows;
   if (currentApres.size>0) filtered = filtered.filter(r=>currentApres.has(r.APRESENTACAO));
   const ws = XLSX.utils.json_to_sheet(filtered.map(r=>({
+    ID_ITEM: r.ID_ITEM,
     Substância: r.SUBSTANCIA,
     Laboratório: r.LABORATORIO,
+    EAN: r.EAN1,
     Produto: r.PRODUTO,
     Apresentação: r.APRESENTACAO,
     'Tipo Produto': r.TIPO_PRODUTO,
     'Regime Preço': r.REGIME_PRECO,
-    'Preço (R$)': formatPrice(r.PRECO)
+    'Preço (R$)': formatPrice(r.PRECO),
+    QTD: formatPrice(r.QTD),
+    'Última Compra': fmtData(r.ULTIMA_COMPRA),
+    'Último Preço Pago': formatPrice(r.ULTIMO_PRECO_PAGO),
+    'Menor Preço Histórico': formatPrice(r.MENOR_PRECO_HISTORICO),
+    'Maior Preço Histórico': formatPrice(r.MAIOR_PRECO_HISTORICO),
+    'Preço Médio Histórico': formatPrice(r.PRECO_MEDIO_HISTORICO),
+    'Última Cotação': formatPrice(r.ULTIMA_COTACAO),
+    'Economia Potencial (R$)': formatPrice(r.ECONOMIA_POTENCIAL),
+    'Status Preço': r.STATUS_PRECO
   })));
   const wb = XLSX.utils.book_new();
   XLSX.utils.book_append_sheet(wb, ws, 'Comparação');
-  XLSX.writeFile(wb, `comparacao_${[...msState.substSubs.selected].slice(0,2).join('_').slice(0,30)}.xlsx`);
+  const labelParts = [...selSubs, ...selProds, ...selEans].slice(0,2).join('_').slice(0,30) || 'busca';
+  XLSX.writeFile(wb, `comparacao_${labelParts}.xlsx`);
   showToast('✅ Exportado com sucesso', 'success');
 }
 
@@ -1511,8 +1837,10 @@ function exportarTabelaLab() {
   const selLabs = [...msState.labLabs.selected];
   if (!selLabs.length) { showToast('Selecione um laboratório primeiro', 'error'); return; }
   const ws = XLSX.utils.json_to_sheet(labTableData.map(r=>({
+    ID_ITEM: r.ID_ITEM,
     Substância: r.SUBSTANCIA,
     Laboratório: r.LABORATORIO,
+    EAN: r.EAN1,
     Produto: r.PRODUTO,
     Apresentação: r.APRESENTACAO,
     'Tipo Produto': r.TIPO_PRODUTO,
