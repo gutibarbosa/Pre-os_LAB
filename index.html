@@ -142,6 +142,10 @@
   .td-lab { font-weight: 600; }
   .td-produto, .td-apres { color: var(--muted); font-size: 12px; }
   .badge-tipo { display: inline-block; padding: 2px 7px; border-radius: 4px; font-size: 10px; font-weight: 700; letter-spacing: 0.5px; text-transform: uppercase; }
+  .badge-compra { display: inline-block; padding: 2px 6px; border-radius: 4px; font-size: 10px; font-weight: 600; margin-top: 2px; white-space: nowrap; }
+  .badge-compra.cheapest { background: rgba(0,201,167,0.18); color: var(--accent); }
+  .badge-compra.expensive { background: rgba(255,77,109,0.18); color: var(--danger); }
+  .badge-compra.neutral { background: rgba(139,148,158,0.15); color: var(--muted); }
   .tipo-GENÉRICO, .tipo-GENERICO { background: rgba(123,97,255,0.2); color: #a78bfa; }
   .tipo-SIMILAR { background: rgba(0,201,167,0.15); color: var(--accent); }
   .tipo-NOVO { background: rgba(255,77,109,0.15); color: var(--danger); }
@@ -478,6 +482,7 @@
                     <th onclick="sortTable('APRESENTACAO')" id="th-APRESENTACAO">Apresentação <span class="sort-arrow">↕</span></th>
                     <th onclick="sortTable('TIPO_PRODUTO')" id="th-TIPO_PRODUTO">Tipo <span class="sort-arrow">↕</span></th>
                     <th onclick="sortTable('PRECO')" id="th-PRECO">Preço <span class="sort-arrow">↕</span></th>
+                    <th onclick="sortTable('ULTIMO_PRECO_PAGO')" id="th-ULTIMO_PRECO_PAGO">Última Compra <span class="sort-arrow">↕</span></th>
                   </tr>
                 </thead>
                 <tbody id="tableBody"></tbody>
@@ -525,6 +530,7 @@
                   <th>Tipo</th>
                   <th>Regime</th>
                   <th style="text-align:right">Preço</th>
+                  <th>Última Compra</th>
                 </tr>
               </thead>
               <tbody id="labTableBody"></tbody>
@@ -744,6 +750,32 @@ function pct(a,b) {
   if (!b) return 0;
   return ((a-b)/b*100);
 }
+// Sinalizador de compra: compara o ÚLTIMO_PRECO_PAGO do item com o de outros
+// laboratórios que vendem a mesma SUBSTÂNCIA + APRESENTAÇÃO (grupo comparável).
+function getPurchaseInfo(r) {
+  const ultimo = formatPrice(r.ULTIMO_PRECO_PAGO);
+  if (ultimo === null) {
+    return { hasCompra: false, html: '<span class="badge-compra neutral">Sem compra</span>' };
+  }
+  const dataStr = fmtData(r.ULTIMA_COMPRA);
+  const group = (substanceMap[r.SUBSTANCIA] || [])
+    .filter(x => x.APRESENTACAO === r.APRESENTACAO)
+    .map(x => formatPrice(x.ULTIMO_PRECO_PAGO))
+    .filter(v => v !== null);
+  if (group.length <= 1) {
+    return { hasCompra: true, ultimo, dataStr,
+      html: `<div>${fmtBRL(ultimo)}</div><span class="badge-compra neutral">${dataStr} · único comprador</span>` };
+  }
+  const minPrice = Math.min(...group);
+  const isMin = ultimo <= minPrice + 1e-9;
+  if (isMin) {
+    return { hasCompra: true, ultimo, dataStr,
+      html: `<div>${fmtBRL(ultimo)}</div><span class="badge-compra cheapest">✓ melhor compra (${dataStr})</span>` };
+  }
+  const diff = pct(ultimo, minPrice);
+  return { hasCompra: true, ultimo, dataStr,
+    html: `<div>${fmtBRL(ultimo)}</div><span class="badge-compra expensive">+${diff.toFixed(0)}% vs. menor compra (${dataStr})</span>` };
+}
 
 // ==================== FILE READING ====================
 function findSheet(wb, candidates) {
@@ -917,6 +949,10 @@ document.addEventListener('click', e => {
   }
 });
 
+function anySubstanciaFilterActive() {
+  return msState.substSubs.selected.size > 0 || msState.eanSearch.selected.size > 0
+    || msState.prodSearch.selected.size > 0 || msState.apresSearch.selected.size > 0;
+}
 // ==================== CHIPS (tipo) ====================
 document.getElementById('chipRow').addEventListener('click', e => {
   const chip = e.target.closest('.chip');
@@ -924,7 +960,7 @@ document.getElementById('chipRow').addEventListener('click', e => {
   document.querySelectorAll('#chipRow .chip').forEach(c => c.classList.remove('active'));
   chip.classList.add('active');
   currentTipo = chip.dataset.tipo;
-  if (msState.substSubs.selected.size > 0) renderSubstancia();
+  if (anySubstanciaFilterActive()) renderSubstancia();
 });
 
 // ==================== SELECT SUBSTANCE ====================
@@ -949,7 +985,7 @@ function sortTable(key) {
   document.querySelectorAll('thead th').forEach(th => { th.classList.remove('sorted'); if(th.querySelector('.sort-arrow')) th.querySelector('.sort-arrow').textContent = '↕'; });
   const th = document.getElementById('th-' + key);
   if(th) { th.classList.add('sorted'); th.querySelector('.sort-arrow').textContent = sortDir === 1 ? '↑' : '↓'; }
-  if (msState.substSubs.selected.size > 0) renderSubstancia();
+  if (anySubstanciaFilterActive()) renderSubstancia();
 }
 
 // ==================== RENDER SUBSTÂNCIA ====================
@@ -995,7 +1031,7 @@ function renderSubstancia() {
   document.getElementById('contentGrid').style.display = '';
 
   const sorted = [...filtered].sort((a,b) => {
-    if (sortKey === 'PRECO') return ((formatPrice(a.PRECO)??Infinity) - (formatPrice(b.PRECO)??Infinity)) * sortDir;
+    if (sortKey === 'PRECO' || sortKey === 'ULTIMO_PRECO_PAGO') return ((formatPrice(a[sortKey])??Infinity) - (formatPrice(b[sortKey])??Infinity)) * sortDir;
     return String(a[sortKey]).localeCompare(String(b[sortKey]), 'pt-BR') * sortDir;
   });
 
@@ -1043,6 +1079,7 @@ function renderSubstancia() {
       ? `<span class="td-price" style="color:var(--muted);font-style:italic;font-size:11px;font-weight:400">sem preço</span>`
       : `<span class="td-price ${isCheapest?'price-min':isPriciest?'price-max':''}">${fmtBRL(p)}${isCheapest?'<span class="price-star">★</span>':''}</span>`;
     const subCell = multiSub ? `<td style="font-size:11px;color:var(--muted);max-width:140px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${r.SUBSTANCIA}</td>` : '';
+    const compraInfo = getPurchaseInfo(r);
     return `<tr class="${isCheapest?'cheapest':isPriciest?'priciest':''}">
       ${subCell}
       <td><div class="td-lab">${r.LABORATORIO}</div></td>
@@ -1050,6 +1087,7 @@ function renderSubstancia() {
       <td><div class="td-apres">${r.APRESENTACAO}</div></td>
       <td><span class="badge-tipo ${tipoClass}">${r.TIPO_PRODUTO||'—'}</span></td>
       <td>${priceCell}</td>
+      <td>${compraInfo.html}</td>
     </tr>`;
   }).join('');
 
@@ -1194,6 +1232,7 @@ function renderLabTable(rows, multiLab) {
     const p = formatPrice(r.PRECO);
     const tipoClass = ['GENÉRICO','GENERICO','SIMILAR','NOVO','BIOLÓGICO','BIOLOGICO'].includes(r.TIPO_PRODUTO)?'tipo-'+r.TIPO_PRODUTO:'tipo-default';
     const labCell = multiLab ? `<td style="font-weight:600;font-size:12px;max-width:140px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${r.LABORATORIO}</td>` : '';
+    const compraInfo = getPurchaseInfo(r);
     return `<tr>
       ${labCell}
       <td style="max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:12px">${r.SUBSTANCIA}</td>
@@ -1202,6 +1241,7 @@ function renderLabTable(rows, multiLab) {
       <td><span class="badge-tipo ${tipoClass}">${r.TIPO_PRODUTO||'—'}</span></td>
       <td style="font-size:11px;color:var(--muted)">${r.REGIME_PRECO||'—'}</td>
       <td class="td-price" style="text-align:right">${p!==null?fmtBRL(p):'—'}</td>
+      <td>${compraInfo.html}</td>
     </tr>`;
   }).join('');
 }
@@ -1410,7 +1450,7 @@ function renderComparador() {
   const activeSubs = subs.length ? subs : allSubstances.filter(s => labs.some(l => substanceMap[s]?.some(r=>r.LABORATORIO===l)));
   const activeLabs = labs.length ? labs : [...new Set(activeSubs.flatMap(s=>(substanceMap[s]||[]).map(r=>r.LABORATORIO)))];
 
-  // For each subs×labs: min price (filtered by apresentação if selected)
+  // For each subs×labs: min price (filtered by apresentação if selected) + última compra (menor valor pago)
   const matrix = {};
   activeSubs.forEach(sub => {
     matrix[sub] = {};
@@ -1418,7 +1458,11 @@ function renderComparador() {
       let rows = (substanceMap[sub]||[]).filter(r=>r.LABORATORIO===lab);
       if (apres.length > 0) rows = rows.filter(r => apres.includes(r.APRESENTACAO));
       const prices = rows.map(r=>formatPrice(r.PRECO)).filter(p=>p!==null);
-      matrix[sub][lab] = prices.length ? Math.min(...prices) : null;
+      const compras = rows.map(r=>formatPrice(r.ULTIMO_PRECO_PAGO)).filter(p=>p!==null);
+      matrix[sub][lab] = {
+        preco: prices.length ? Math.min(...prices) : null,
+        ultimoCompra: compras.length ? Math.min(...compras) : null,
+      };
     });
   });
 
@@ -1436,16 +1480,21 @@ function renderComparador() {
   </tr>`;
 
   tbody.innerHTML = activeSubs.slice(0,50).map(sub => {
-    const rowPrices = labSlice.map(l=>matrix[sub][l]).filter(p=>p!==null);
+    const rowPrices = labSlice.map(l=>matrix[sub][l].preco).filter(p=>p!==null);
     const rowMin = rowPrices.length ? Math.min(...rowPrices) : null;
     const rowMax = rowPrices.length ? Math.max(...rowPrices) : null;
     const rowDiff = (rowMin!==null && rowMax!==null && rowMin>0) ? ((rowMax-rowMin)/rowMin*100) : null;
+    const rowComprasValidas = labSlice.map(l=>matrix[sub][l].ultimoCompra).filter(p=>p!==null);
+    const rowMinCompra = rowComprasValidas.length ? Math.min(...rowComprasValidas) : null;
     const cells = labSlice.map(l => {
-      const p = matrix[sub][l];
+      const { preco: p, ultimoCompra } = matrix[sub][l];
       if (p===null) return `<td style="text-align:right;color:var(--muted);font-size:11px">—</td>`;
       const isMin = p===rowMin;
       const isMax = p===rowMax && rowMax!==rowMin;
-      return `<td class="td-price ${isMin?'price-min':isMax?'price-max':''}" style="text-align:right">${fmtBRL(p)}${isMin?' ★':''}</td>`;
+      const compraSub = ultimoCompra===null
+        ? `<div style="font-size:9px;color:var(--muted)">sem compra</div>`
+        : `<div style="font-size:9px;color:${ultimoCompra<=rowMinCompra+1e-9?'var(--accent)':'var(--muted)'}">últ. compra: ${fmtBRL(ultimoCompra)}${ultimoCompra<=rowMinCompra+1e-9?' ✓':''}</div>`;
+      return `<td class="td-price ${isMin?'price-min':isMax?'price-max':''}" style="text-align:right">${fmtBRL(p)}${isMin?' ★':''}${compraSub}</td>`;
     }).join('');
     return `<tr>
       <td style="font-size:12px;font-weight:600;max-width:180px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${sub}</td>
@@ -1458,7 +1507,7 @@ function renderComparador() {
 
   // Ranking chart
   const labAvgs = labSlice.map(lab => {
-    const vals = activeSubs.map(s=>matrix[s][lab]).filter(p=>p!==null);
+    const vals = activeSubs.map(s=>matrix[s][lab].preco).filter(p=>p!==null);
     return { lab, avg: vals.length ? vals.reduce((a,b)=>a+b,0)/vals.length : null };
   }).filter(x=>x.avg!==null).sort((a,b)=>a.avg-b.avg);
 
@@ -1482,7 +1531,7 @@ function renderComparador() {
 
   // Amplitude chart
   const subAmpl = activeSubs.slice(0,12).map(sub => {
-    const prices = labSlice.map(l=>matrix[sub][l]).filter(p=>p!==null);
+    const prices = labSlice.map(l=>matrix[sub][l].preco).filter(p=>p!==null);
     const mn = prices.length?Math.min(...prices):null;
     const mx = prices.length?Math.max(...prices):null;
     return { sub: sub.length>28?sub.slice(0,28)+'…':sub, diff: (mn!==null&&mx!==null&&mn>0)?((mx-mn)/mn*100):null };
