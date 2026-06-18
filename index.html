@@ -124,6 +124,8 @@
   .panel-actions { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
   .two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
   @media (max-width: 900px) { .two-col { grid-template-columns: 1fr; } }
+  .stacked-full { display: flex; flex-direction: column; gap: 20px; }
+  .stacked-full .panel { width: 100%; }
 
   /* TABLE */
   .table-wrap { overflow-x: auto; max-height: 520px; overflow-y: auto; }
@@ -468,7 +470,7 @@
 
       <!-- TABELA + GRÁFICO -->
       <div id="contentGrid" style="display:none">
-        <div class="two-col">
+        <div class="stacked-full">
           <div class="panel">
             <div class="panel-header">
               <div class="panel-header-left">Tabela Comparativa <span class="panel-count" id="tableCount">0 itens</span></div>
