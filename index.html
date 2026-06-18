@@ -260,6 +260,7 @@
     <div class="nav-tab" data-tab="laboratorio" onclick="switchTab('laboratorio')">🏭 Por Laboratório</div>
     <div class="nav-tab" data-tab="comparador" onclick="switchTab('comparador')">⚖️ Comparador Avançado</div>
     <div class="nav-tab" data-tab="executivo" onclick="switchTab('executivo')">📊 Visão Executiva</div>
+    <div class="nav-tab" data-tab="compras" onclick="switchTab('compras')">🛒 Compras</div>
   </div>
 </div>
 
@@ -650,6 +651,97 @@
       </div>
     </div>
 
+    <!-- ABA: COMPRAS -->
+    <div id="tabCompras" style="display:none">
+
+      <!-- CARD MELHOR OPORTUNIDADE -->
+      <div id="bestOpportunityCard" style="display:none;margin-bottom:20px">
+        <div style="background:linear-gradient(135deg,rgba(0,201,167,0.13),rgba(123,97,255,0.08));border:1.5px solid var(--accent);border-radius:var(--radius);padding:20px 24px;">
+          <div style="display:flex;align-items:center;gap:10px;margin-bottom:14px;">
+            <span style="background:var(--accent);color:#000;font-weight:800;font-size:11px;letter-spacing:1.5px;padding:4px 12px;border-radius:20px;white-space:nowrap;">🏆 MELHOR OPORTUNIDADE DE COMPRA</span>
+          </div>
+          <div style="display:flex;gap:24px;flex-wrap:wrap;align-items:flex-end;">
+            <div style="flex:1;min-width:220px;">
+              <div id="bopProduto" style="font-size:17px;font-weight:800;color:var(--text);margin-bottom:4px;"></div>
+              <div id="bopLaboratorio" style="font-size:12px;color:var(--muted);margin-bottom:2px;"></div>
+              <div id="bopApresentacao" style="font-size:11px;color:var(--muted);"></div>
+            </div>
+            <div style="display:flex;gap:20px;flex-wrap:wrap;">
+              <div style="text-align:center;">
+                <div style="font-size:10px;font-weight:700;letter-spacing:1px;color:var(--muted);text-transform:uppercase;margin-bottom:4px;">Último Preço Pago</div>
+                <div id="bopUltimo" style="font-size:20px;font-weight:800;color:var(--danger);"></div>
+              </div>
+              <div style="text-align:center;">
+                <div style="font-size:10px;font-weight:700;letter-spacing:1px;color:var(--muted);text-transform:uppercase;margin-bottom:4px;">Melhor Preço Atual</div>
+                <div id="bopMelhor" style="font-size:20px;font-weight:800;color:var(--accent);"></div>
+              </div>
+              <div style="text-align:center;">
+                <div style="font-size:10px;font-weight:700;letter-spacing:1px;color:var(--muted);text-transform:uppercase;margin-bottom:4px;">Economia R$</div>
+                <div id="bopEconomiaBRL" style="font-size:20px;font-weight:800;color:var(--warn);"></div>
+              </div>
+              <div style="text-align:center;">
+                <div style="font-size:10px;font-weight:700;letter-spacing:1px;color:var(--muted);text-transform:uppercase;margin-bottom:4px;">Economia %</div>
+                <div id="bopEconomiaPct" style="font-size:20px;font-weight:800;color:var(--warn);"></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- FILTRO E AÇÕES DA ABA COMPRAS -->
+      <div class="panel" style="margin-bottom:20px;">
+        <div class="filter-bar" style="gap:14px;">
+          <label style="font-size:11px;color:var(--muted);">Status:</label>
+          <select id="comprasStatusFilter" onchange="renderComprasTab()" style="background:var(--bg);border:1px solid var(--border);color:var(--text);border-radius:6px;padding:5px 10px;font-size:12px;outline:none;">
+            <option value="">Todos</option>
+            <option value="Redução">🟢 Redução (comprar agora)</option>
+            <option value="Estável">🟡 Estável</option>
+            <option value="Aumento">🔴 Aumento de preço</option>
+            <option value="Sem cotação">⚪ Sem cotação</option>
+          </select>
+          <label style="font-size:11px;color:var(--muted);">Tipo:</label>
+          <select id="comprasTipoFilter" onchange="renderComprasTab()" style="background:var(--bg);border:1px solid var(--border);color:var(--text);border-radius:6px;padding:5px 10px;font-size:12px;outline:none;">
+            <option value="">Todos</option>
+            <option value="GENÉRICO">Genérico</option>
+            <option value="SIMILAR">Similar</option>
+            <option value="NOVO">Novo</option>
+            <option value="BIOLÓGICO">Biológico</option>
+          </select>
+          <div class="search-wrap" style="max-width:260px;flex:1;">
+            <span class="search-icon">🔎</span>
+            <input type="text" class="search-input" id="comprasSearch" placeholder="Buscar substância, produto…" oninput="renderComprasTab()">
+          </div>
+          <button class="btn-secondary" onclick="exportarCompras()" style="white-space:nowrap;">⬇ Exportar</button>
+        </div>
+      </div>
+
+      <!-- TABELA DE COMPRAS -->
+      <div class="panel">
+        <div class="panel-header">
+          <div class="panel-header-left">Recomendações de Compra <span class="panel-count" id="comprasCount">0 itens</span></div>
+          <div style="font-size:11px;color:var(--muted)">Ordenado pela maior economia potencial</div>
+        </div>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th style="min-width:180px">Substância</th>
+                <th style="min-width:160px">Produto</th>
+                <th style="min-width:130px">Apresentação</th>
+                <th style="min-width:160px">Laboratório</th>
+                <th style="text-align:right;min-width:110px">Último Preço Pago</th>
+                <th style="text-align:right;min-width:130px">Menor Preço Atual</th>
+                <th style="text-align:right;min-width:100px">Diferença R$</th>
+                <th style="text-align:right;min-width:80px">Diferença %</th>
+                <th style="min-width:120px;text-align:center">Status de Compra</th>
+              </tr>
+            </thead>
+            <tbody id="comprasTableBody"></tbody>
+          </table>
+        </div>
+      </div>
+    </div><!-- /tabCompras -->
+
   </div><!-- /mainContent -->
 </div><!-- /app-body -->
 
@@ -875,6 +967,7 @@ function loadData(records, fileName, sheetName, histCompras, histCotacoes) {
   document.getElementById('tabLaboratorio').style.display = 'none';
   document.getElementById('tabComparador').style.display = 'none';
   document.getElementById('tabExecutivo').style.display = 'none';
+  document.getElementById('tabCompras').style.display = 'none';
   document.getElementById('kpiRow').style.display = 'none';
   document.getElementById('winnerBanner').style.display = 'none';
   document.getElementById('contentGrid').style.display = 'none';
@@ -893,6 +986,7 @@ function loadData(records, fileName, sheetName, histCompras, histCotacoes) {
 
   populateEvolucaoSearch();
   renderExecutivo();
+  renderComprasTab();
   showToast(`✅ ${records.length.toLocaleString('pt-BR')} itens carregados`, 'success');
 }
 
@@ -913,6 +1007,8 @@ function switchTab(tab) {
   document.getElementById('tabLaboratorio').style.display = tab === 'laboratorio' ? '' : 'none';
   document.getElementById('tabComparador').style.display = tab === 'comparador' ? '' : 'none';
   document.getElementById('tabExecutivo').style.display = tab === 'executivo' ? '' : 'none';
+  document.getElementById('tabCompras').style.display = tab === 'compras' ? '' : 'none';
+  if (tab === 'compras') renderComprasTab();
   document.getElementById('sidebarSubstancia').style.display = tab === 'substancia' ? '' : 'none';
   document.getElementById('sidebarLaboratorio').style.display = tab === 'laboratorio' ? '' : 'none';
   document.getElementById('sidebarComparador').style.display = tab === 'comparador' ? '' : 'none';
@@ -1904,7 +2000,152 @@ function exportarTabelaLab() {
   showToast('✅ Exportado com sucesso', 'success');
 }
 
-function exportarComparador() {
+// ==================== ABA COMPRAS ====================
+function renderComprasTab() {
+  if (!allRecords.length) return;
+
+  const statusFilter = document.getElementById('comprasStatusFilter')?.value || '';
+  const tipoFilter   = document.getElementById('comprasTipoFilter')?.value || '';
+  const q            = (document.getElementById('comprasSearch')?.value || '').toLowerCase();
+
+  // Build rows: only items that have ULTIMO_PRECO_PAGO and ULTIMA_COTACAO
+  const rows = allRecords
+    .map(r => {
+      const ultimoPago  = formatPrice(r.ULTIMO_PRECO_PAGO);
+      const menorAtual  = formatPrice(r.ULTIMA_COTACAO);
+      if (ultimoPago === null) return null;
+      const diffBRL = menorAtual !== null ? ultimoPago - menorAtual : null;
+      const diffPct = (diffBRL !== null && ultimoPago > 0) ? (diffBRL / ultimoPago * 100) : null;
+      // Status de Compra: use STATUS_PRECO se disponível, senão derivar
+      let status = r.STATUS_PRECO || '';
+      if (!status) {
+        if (menorAtual === null) status = 'Sem cotação';
+        else if (ultimoPago > menorAtual + 1e-9) status = 'Redução';
+        else if (ultimoPago < menorAtual - 1e-9) status = 'Aumento';
+        else status = 'Estável';
+      }
+      return { ...r, _ultimoPago: ultimoPago, _menorAtual: menorAtual, _diffBRL: diffBRL, _diffPct: diffPct, _status: status };
+    })
+    .filter(r => r !== null);
+
+  // Apply filters
+  let filtered = rows;
+  if (statusFilter) filtered = filtered.filter(r => r._status === statusFilter);
+  if (tipoFilter)   filtered = filtered.filter(r => r.TIPO_PRODUTO === tipoFilter);
+  if (q) filtered = filtered.filter(r =>
+    r.SUBSTANCIA.toLowerCase().includes(q) ||
+    r.PRODUTO.toLowerCase().includes(q) ||
+    r.LABORATORIO.toLowerCase().includes(q) ||
+    r.APRESENTACAO.toLowerCase().includes(q)
+  );
+
+  // Sort by biggest saving (diffBRL desc, nulls last)
+  filtered.sort((a, b) => {
+    if (a._diffBRL === null && b._diffBRL === null) return 0;
+    if (a._diffBRL === null) return 1;
+    if (b._diffBRL === null) return -1;
+    return b._diffBRL - a._diffBRL;
+  });
+
+  // Best opportunity card (from full unfiltered rows)
+  const bestRows = rows.filter(r => r._diffBRL !== null && r._diffBRL > 0)
+    .sort((a, b) => b._diffBRL - a._diffBRL);
+  const best = bestRows[0] || null;
+  const card = document.getElementById('bestOpportunityCard');
+  if (best) {
+    card.style.display = '';
+    document.getElementById('bopProduto').textContent     = best.PRODUTO;
+    document.getElementById('bopLaboratorio').textContent = best.LABORATORIO;
+    document.getElementById('bopApresentacao').textContent = best.SUBSTANCIA + ' · ' + best.APRESENTACAO;
+    document.getElementById('bopUltimo').textContent      = fmtBRL(best._ultimoPago);
+    document.getElementById('bopMelhor').textContent      = fmtBRL(best._menorAtual);
+    document.getElementById('bopEconomiaBRL').textContent = fmtBRL(best._diffBRL);
+    document.getElementById('bopEconomiaPct').textContent = best._diffPct.toFixed(1) + '%';
+  } else {
+    card.style.display = 'none';
+  }
+
+  document.getElementById('comprasCount').textContent = filtered.length + ' itens';
+
+  function statusBadge(status) {
+    const map = {
+      'Redução':    { cls: 'rgba(0,201,167,0.15)', color: 'var(--accent)',  icon: '🟢' },
+      'Estável':    { cls: 'rgba(255,183,3,0.15)', color: 'var(--warn)',   icon: '🟡' },
+      'Aumento':    { cls: 'rgba(255,77,109,0.15)', color: 'var(--danger)', icon: '🔴' },
+      'Sem cotação':{ cls: 'rgba(139,148,158,0.12)', color: 'var(--muted)',  icon: '⚪' },
+    };
+    const s = map[status] || map['Sem cotação'];
+    return `<span style="display:inline-block;padding:3px 10px;border-radius:4px;font-size:11px;font-weight:700;background:${s.cls};color:${s.color}">${s.icon} ${status}</span>`;
+  }
+
+  document.getElementById('comprasTableBody').innerHTML = filtered.map(r => {
+    const tipoClass = ['GENÉRICO','GENERICO','SIMILAR','NOVO','BIOLÓGICO','BIOLOGICO'].includes(r.TIPO_PRODUTO) ? 'tipo-'+r.TIPO_PRODUTO : 'tipo-default';
+    const ultimoCell = r._ultimoPago !== null ? `<span class="td-price">${fmtBRL(r._ultimoPago)}</span>` : `<span style="color:var(--muted);font-size:11px">—</span>`;
+    const menorCell  = r._menorAtual !== null ? `<span class="td-price price-min">${fmtBRL(r._menorAtual)}</span>` : `<span style="color:var(--muted);font-size:11px">sem cotação</span>`;
+    const diffBRLCell = r._diffBRL !== null
+      ? `<span class="diff-badge ${r._diffBRL > 0 ? 'green' : 'red'}">${r._diffBRL > 0 ? '-' : '+'}${fmtBRL(Math.abs(r._diffBRL))}</span>`
+      : '—';
+    const diffPctCell = r._diffPct !== null
+      ? `<span class="pct-diff ${r._diffPct > 0 ? 'good' : 'bad'}">${r._diffPct > 0 ? '-' : '+'}${Math.abs(r._diffPct).toFixed(1)}%</span>`
+      : '—';
+    return `<tr>
+      <td style="font-size:11px;max-width:180px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${r.SUBSTANCIA}</td>
+      <td><div class="td-lab" style="font-size:12px">${r.PRODUTO}</div><span class="badge-tipo ${tipoClass}" style="margin-top:2px">${r.TIPO_PRODUTO||'—'}</span></td>
+      <td class="td-apres">${r.APRESENTACAO}</td>
+      <td class="td-lab" style="font-size:12px;max-width:160px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${r.LABORATORIO}</td>
+      <td style="text-align:right">${ultimoCell}</td>
+      <td style="text-align:right">${menorCell}</td>
+      <td style="text-align:right">${diffBRLCell}</td>
+      <td style="text-align:right">${diffPctCell}</td>
+      <td style="text-align:center">${statusBadge(r._status)}</td>
+    </tr>`;
+  }).join('');
+}
+
+function exportarCompras() {
+  if (!allRecords.length) { showToast('Carregue a planilha primeiro', 'error'); return; }
+  const statusFilter = document.getElementById('comprasStatusFilter')?.value || '';
+  const tipoFilter   = document.getElementById('comprasTipoFilter')?.value || '';
+  const q            = (document.getElementById('comprasSearch')?.value || '').toLowerCase();
+  let rows = allRecords.map(r => {
+    const ultimoPago = formatPrice(r.ULTIMO_PRECO_PAGO);
+    const menorAtual = formatPrice(r.ULTIMA_COTACAO);
+    if (ultimoPago === null) return null;
+    const diffBRL = menorAtual !== null ? ultimoPago - menorAtual : null;
+    const diffPct = (diffBRL !== null && ultimoPago > 0) ? (diffBRL / ultimoPago * 100) : null;
+    let status = r.STATUS_PRECO || '';
+    if (!status) {
+      if (menorAtual === null) status = 'Sem cotação';
+      else if (ultimoPago > menorAtual + 1e-9) status = 'Redução';
+      else if (ultimoPago < menorAtual - 1e-9) status = 'Aumento';
+      else status = 'Estável';
+    }
+    return { ...r, _ultimoPago: ultimoPago, _menorAtual: menorAtual, _diffBRL: diffBRL, _diffPct: diffPct, _status: status };
+  }).filter(r => r !== null);
+  if (statusFilter) rows = rows.filter(r => r._status === statusFilter);
+  if (tipoFilter)   rows = rows.filter(r => r.TIPO_PRODUTO === tipoFilter);
+  if (q) rows = rows.filter(r =>
+    r.SUBSTANCIA.toLowerCase().includes(q) || r.PRODUTO.toLowerCase().includes(q) ||
+    r.LABORATORIO.toLowerCase().includes(q) || r.APRESENTACAO.toLowerCase().includes(q)
+  );
+  rows.sort((a,b) => { if (a._diffBRL===null && b._diffBRL===null) return 0; if (a._diffBRL===null) return 1; if (b._diffBRL===null) return -1; return b._diffBRL - a._diffBRL; });
+  const ws = XLSX.utils.json_to_sheet(rows.map(r => ({
+    'Substância':           r.SUBSTANCIA,
+    'Produto':              r.PRODUTO,
+    'Apresentação':         r.APRESENTACAO,
+    'Laboratório':          r.LABORATORIO,
+    'Último Preço Pago':    r._ultimoPago,
+    'Menor Preço Atual':    r._menorAtual,
+    'Diferença R$':         r._diffBRL,
+    'Diferença %':          r._diffPct !== null ? +r._diffPct.toFixed(2) : null,
+    'Status de Compra':     r._status,
+  })));
+  const wb2 = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb2, ws, 'Compras');
+  XLSX.writeFile(wb2, 'recomendacoes_compras.xlsx');
+  showToast('✅ Exportado com sucesso', 'success');
+}
+
   const subs = [...msState.compSubs.selected];
   const labs = [...msState.compLabs.selected];
   const apres = [...msState.compApres.selected];
