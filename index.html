@@ -1,0 +1,2517 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Dashboard · Comparação de Preços por Substância</title>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+<style>
+  :root {
+    --bg: #0d1117;
+    --surface: #161b22;
+    --surface2: #1c2230;
+    --border: #2a3344;
+    --accent: #00c9a7;
+    --accent2: #7b61ff;
+    --danger: #ff4d6d;
+    --warn: #ffb703;
+    --text: #e6edf3;
+    --muted: #8b949e;
+    --radius: 10px;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { background: var(--bg); color: var(--text); font-family: 'Segoe UI', system-ui, sans-serif; min-height: 100vh; display: flex; flex-direction: column; }
+
+  /* HEADER */
+  header { background: var(--surface); border-bottom: 1px solid var(--border); padding: 14px 24px; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 10px; position: sticky; top: 0; z-index: 200; }
+  .header-left { display: flex; align-items: center; gap: 14px; }
+  .logo-pill { background: var(--accent); color: #000; font-weight: 800; font-size: 11px; letter-spacing: 1.5px; padding: 4px 10px; border-radius: 20px; white-space: nowrap; }
+  header h1 { font-size: 15px; font-weight: 600; }
+  header .subtitle { font-size: 11px; color: var(--muted); margin-top: 2px; }
+  .header-right { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+  .upload-btn { display: flex; align-items: center; gap: 8px; background: var(--surface2); border: 1px solid var(--border); border-radius: 8px; padding: 7px 14px; cursor: pointer; font-size: 12px; color: var(--text); transition: all 0.15s; white-space: nowrap; }
+  .upload-btn:hover { border-color: var(--accent); color: var(--accent); }
+  .upload-btn input { display: none; }
+
+  /* LAYOUT */
+  .app-body { display: flex; flex: 1; overflow: hidden; }
+
+  /* SIDEBAR */
+  #sidebar { width: 280px; min-width: 280px; background: var(--surface); border-right: 1px solid var(--border); display: flex; flex-direction: column; transition: width 0.25s, min-width 0.25s; overflow: hidden; }
+  #sidebar.collapsed { width: 0; min-width: 0; }
+  .sidebar-inner { width: 280px; padding: 16px; overflow-y: auto; flex: 1; }
+  .sidebar-section { margin-bottom: 20px; }
+  .sidebar-title { font-size: 10px; font-weight: 700; letter-spacing: 1.2px; color: var(--accent); text-transform: uppercase; margin-bottom: 10px; display: flex; align-items: center; gap: 6px; }
+  .sidebar-toggle { background: var(--surface); border: 1px solid var(--border); border-radius: 6px; padding: 4px 8px; cursor: pointer; color: var(--muted); font-size: 16px; line-height: 1; transition: all 0.15s; }
+  .sidebar-toggle:hover { color: var(--accent); border-color: var(--accent); }
+
+  /* NAV TABS */
+  .nav-tabs { display: flex; gap: 4px; padding: 0 24px; background: var(--surface); border-bottom: 1px solid var(--border); flex-wrap: wrap; }
+  .nav-tab { padding: 10px 16px; font-size: 12px; font-weight: 600; color: var(--muted); cursor: pointer; border-bottom: 2px solid transparent; transition: all 0.15s; white-space: nowrap; }
+  .nav-tab:hover { color: var(--text); }
+  .nav-tab.active { color: var(--accent); border-bottom-color: var(--accent); }
+
+  /* MAIN CONTENT */
+  #mainContent { flex: 1; overflow-y: auto; padding: 24px; }
+
+  /* UPLOAD AREA */
+  #uploadArea { border: 2px dashed var(--border); border-radius: var(--radius); padding: 64px 40px; text-align: center; cursor: pointer; transition: all 0.2s; max-width: 600px; margin: 40px auto; }
+  #uploadArea:hover, #uploadArea.drag { border-color: var(--accent); background: rgba(0,201,167,0.04); }
+  #uploadArea .upload-icon { font-size: 48px; margin-bottom: 16px; }
+  #uploadArea h2 { font-size: 18px; margin-bottom: 8px; }
+  #uploadArea p { font-size: 14px; color: var(--muted); margin-bottom: 20px; }
+  #uploadArea input { display: none; }
+  .btn-primary { display: inline-block; background: var(--accent); color: #000; font-weight: 700; font-size: 13px; padding: 10px 24px; border-radius: 8px; cursor: pointer; border: none; transition: opacity 0.15s; }
+  .btn-primary:hover { opacity: 0.85; }
+  .btn-secondary { background: var(--surface2); color: var(--text); border: 1px solid var(--border); font-size: 12px; font-weight: 600; padding: 7px 14px; border-radius: 8px; cursor: pointer; transition: all 0.15s; }
+  .btn-secondary:hover { border-color: var(--accent); color: var(--accent); }
+  .btn-danger { background: rgba(255,77,109,0.12); color: var(--danger); border: 1px solid rgba(255,77,109,0.3); font-size: 12px; font-weight: 600; padding: 7px 14px; border-radius: 8px; cursor: pointer; transition: all 0.15s; }
+  .btn-danger:hover { background: rgba(255,77,109,0.2); }
+
+  /* MULTI-SELECT */
+  .ms-wrap { position: relative; }
+  .ms-box { background: var(--bg); border: 1px solid var(--border); border-radius: 8px; padding: 8px 10px; cursor: pointer; min-height: 38px; display: flex; align-items: flex-start; flex-wrap: wrap; gap: 4px; transition: border-color 0.15s; }
+  .ms-box:focus-within, .ms-box.open { border-color: var(--accent); }
+  .ms-placeholder { color: var(--muted); font-size: 13px; line-height: 22px; }
+  .ms-tag { background: rgba(0,201,167,0.15); color: var(--accent); border: 1px solid rgba(0,201,167,0.3); border-radius: 4px; padding: 2px 6px; font-size: 11px; font-weight: 600; display: flex; align-items: center; gap: 4px; white-space: nowrap; max-width: 180px; }
+  .ms-tag span { overflow: hidden; text-overflow: ellipsis; }
+  .ms-tag-remove { cursor: pointer; opacity: 0.7; font-size: 13px; flex-shrink: 0; }
+  .ms-tag-remove:hover { opacity: 1; }
+  .ms-input { border: none; outline: none; background: transparent; color: var(--text); font-size: 13px; min-width: 80px; flex: 1; padding: 1px 0; }
+  .ms-dropdown { display: none; position: absolute; top: calc(100% + 4px); left: 0; right: 0; background: var(--surface2); border: 1px solid var(--border); border-radius: 8px; max-height: 240px; overflow-y: auto; z-index: 500; box-shadow: 0 8px 24px rgba(0,0,0,0.6); }
+  .ms-dropdown.open { display: block; }
+  .ms-option { padding: 9px 14px; font-size: 13px; cursor: pointer; display: flex; align-items: center; gap: 8px; border-bottom: 1px solid rgba(42,51,68,0.4); }
+  .ms-option:last-child { border-bottom: none; }
+  .ms-option:hover { background: var(--border); }
+  .ms-option.selected { color: var(--accent); }
+  .ms-check { width: 14px; height: 14px; border: 1.5px solid var(--border); border-radius: 3px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; font-size: 10px; }
+  .ms-option.selected .ms-check { background: var(--accent); border-color: var(--accent); color: #000; }
+  .ms-empty { padding: 12px 14px; color: var(--muted); font-size: 12px; text-align: center; }
+  .ms-select-all { padding: 8px 14px; font-size: 11px; color: var(--accent); cursor: pointer; border-bottom: 1px solid var(--border); font-weight: 600; display: flex; gap: 10px; }
+  .ms-select-all span { cursor: pointer; }
+  .ms-select-all span:hover { text-decoration: underline; }
+  .ms-count { background: var(--accent); color: #000; border-radius: 10px; padding: 1px 7px; font-size: 10px; font-weight: 700; margin-left: auto; }
+
+  /* KPIs */
+  .kpi-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 12px; margin-bottom: 20px; }
+  .kpi { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 16px 18px; }
+  .kpi-label { font-size: 10px; font-weight: 700; letter-spacing: 1px; color: var(--muted); text-transform: uppercase; margin-bottom: 8px; }
+  .kpi-value { font-size: 22px; font-weight: 800; color: var(--text); line-height: 1; }
+  .kpi-sub { font-size: 11px; color: var(--muted); margin-top: 4px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .kpi.highlight { border-color: var(--accent); }
+  .kpi.highlight .kpi-value { color: var(--accent); }
+  .kpi.danger { border-color: var(--danger); }
+  .kpi.danger .kpi-value { color: var(--danger); }
+  .kpi.warn { border-color: var(--warn); }
+  .kpi.warn .kpi-value { color: var(--warn); }
+  .kpi.purple { border-color: var(--accent2); }
+  .kpi.purple .kpi-value { color: var(--accent2); }
+
+  /* WINNER BANNER */
+  #winnerBanner { display: none; background: linear-gradient(135deg, rgba(0,201,167,0.12), rgba(0,201,167,0.04)); border: 1px solid var(--accent); border-radius: var(--radius); padding: 14px 20px; margin-bottom: 20px; align-items: center; gap: 16px; flex-wrap: wrap; }
+  .winner-badge { background: var(--accent); color: #000; font-weight: 800; font-size: 10px; letter-spacing: 1px; padding: 3px 10px; border-radius: 20px; white-space: nowrap; }
+  .winner-info { flex: 1; min-width: 200px; }
+  .winner-name { font-size: 14px; font-weight: 700; }
+  .winner-detail { font-size: 11px; color: var(--muted); margin-top: 2px; }
+  .winner-price { font-size: 26px; font-weight: 900; color: var(--accent); white-space: nowrap; }
+
+  /* PANELS */
+  .panel { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); overflow: hidden; margin-bottom: 20px; }
+  .panel-header { display: flex; align-items: center; justify-content: space-between; padding: 12px 18px; border-bottom: 1px solid var(--border); font-size: 13px; font-weight: 700; gap: 10px; flex-wrap: wrap; }
+  .panel-header-left { display: flex; align-items: center; gap: 10px; }
+  .panel-count { background: var(--border); color: var(--muted); font-size: 11px; font-weight: 600; padding: 2px 9px; border-radius: 10px; }
+  .panel-actions { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+  .two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+  @media (max-width: 900px) { .two-col { grid-template-columns: 1fr; } }
+  .stacked-full { display: flex; flex-direction: column; gap: 20px; }
+  .stacked-full .panel { width: 100%; }
+
+  /* TABLE */
+  .table-wrap { overflow-x: auto; max-height: 520px; overflow-y: auto; }
+  table { width: 100%; border-collapse: collapse; font-size: 13px; }
+  thead th { background: var(--surface2); color: var(--muted); font-size: 10px; font-weight: 700; letter-spacing: 0.5px; text-transform: uppercase; padding: 9px 12px; text-align: left; position: sticky; top: 0; z-index: 2; white-space: nowrap; cursor: pointer; user-select: none; }
+  thead th:hover { color: var(--accent); }
+  thead th .sort-arrow { margin-left: 4px; opacity: 0.4; }
+  thead th.sorted .sort-arrow { opacity: 1; color: var(--accent); }
+  tbody tr { border-bottom: 1px solid rgba(42,51,68,0.5); transition: background 0.1s; }
+  tbody tr:hover { background: var(--surface2); }
+  tbody tr.cheapest { background: rgba(0,201,167,0.06); }
+  tbody tr.cheapest td:first-child { border-left: 3px solid var(--accent); }
+  tbody tr.priciest { background: rgba(255,77,109,0.05); }
+  tbody tr.priciest td:first-child { border-left: 3px solid var(--danger); }
+  tbody td { padding: 9px 12px; vertical-align: middle; }
+  .td-lab { font-weight: 600; }
+  .td-produto, .td-apres { color: var(--muted); font-size: 12px; }
+  .badge-tipo { display: inline-block; padding: 2px 7px; border-radius: 4px; font-size: 10px; font-weight: 700; letter-spacing: 0.5px; text-transform: uppercase; }
+  .badge-compra { display: inline-block; padding: 2px 6px; border-radius: 4px; font-size: 10px; font-weight: 600; margin-top: 2px; white-space: nowrap; }
+  .badge-compra.cheapest { background: rgba(0,201,167,0.18); color: var(--accent); }
+  .badge-compra.expensive { background: rgba(255,77,109,0.18); color: var(--danger); }
+  .badge-compra.neutral { background: rgba(139,148,158,0.15); color: var(--muted); }
+  .tipo-GENÉRICO, .tipo-GENERICO { background: rgba(123,97,255,0.2); color: #a78bfa; }
+  .tipo-SIMILAR { background: rgba(0,201,167,0.15); color: var(--accent); }
+  .tipo-NOVO { background: rgba(255,77,109,0.15); color: var(--danger); }
+  .tipo-BIOLÓGICO, .tipo-BIOLOGICO { background: rgba(255,183,3,0.15); color: var(--warn); }
+  .tipo-default { background: rgba(139,148,158,0.15); color: var(--muted); }
+  .td-price { font-weight: 700; font-size: 13px; white-space: nowrap; text-align: right; }
+  .td-price.price-min { color: var(--accent); }
+  .td-price.price-max { color: var(--danger); }
+  .price-star { margin-left: 4px; font-size: 11px; }
+  .chart-wrap { padding: 18px; position: relative; }
+  .pct-diff { font-size: 11px; padding: 2px 7px; border-radius: 4px; font-weight: 700; }
+  .pct-diff.good { background: rgba(0,201,167,0.15); color: var(--accent); }
+  .pct-diff.bad { background: rgba(255,77,109,0.15); color: var(--danger); }
+
+  /* SEARCH WRAP (single) */
+  .search-wrap { position: relative; flex: 1; }
+  .search-icon { position: absolute; left: 12px; top: 50%; transform: translateY(-50%); color: var(--muted); font-size: 14px; pointer-events: none; }
+  .search-input { width: 100%; background: var(--bg); border: 1px solid var(--border); border-radius: 8px; color: var(--text); font-size: 13px; padding: 9px 12px 9px 36px; outline: none; transition: border-color 0.15s; }
+  .search-input:focus { border-color: var(--accent); }
+  .search-input::placeholder { color: var(--muted); }
+  .single-dropdown { display: none; position: absolute; top: calc(100% + 6px); left: 0; right: 0; background: var(--surface2); border: 1px solid var(--border); border-radius: 8px; max-height: 240px; overflow-y: auto; z-index: 400; box-shadow: 0 8px 24px rgba(0,0,0,0.5); }
+  .single-dropdown.open { display: block; }
+  .drop-item { padding: 9px 14px; font-size: 13px; cursor: pointer; border-bottom: 1px solid rgba(42,51,68,0.4); }
+  .drop-item:last-child { border-bottom: none; }
+  .drop-item:hover { background: var(--border); color: var(--accent); }
+  .drop-item mark { background: transparent; color: var(--accent); font-weight: 700; }
+
+  /* CHIP ROW */
+  .chip-row { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 12px; }
+  .chip { background: var(--surface2); border: 1px solid var(--border); border-radius: 20px; padding: 4px 12px; font-size: 11px; color: var(--muted); cursor: pointer; transition: all 0.15s; user-select: none; }
+  .chip:hover, .chip.active { background: var(--accent); color: #000; border-color: var(--accent); font-weight: 600; }
+  .chip.lab-chip { max-width: 200px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .chip.lab-chip.active { background: var(--accent2); border-color: var(--accent2); }
+
+  /* APRES FILTER */
+  .apres-filter { margin-top: 10px; display: flex; gap: 6px; flex-wrap: wrap; }
+  .apres-chip { background: var(--surface2); border: 1px solid var(--border); border-radius: 6px; padding: 4px 10px; font-size: 11px; color: var(--muted); cursor: pointer; transition: all 0.15s; }
+  .apres-chip:hover, .apres-chip.active { background: rgba(123,97,255,0.2); color: var(--accent2); border-color: var(--accent2); }
+
+  /* EMPTY STATE */
+  .empty-state { text-align: center; padding: 60px 40px; color: var(--muted); }
+  .empty-state .big-icon { font-size: 40px; margin-bottom: 12px; }
+  .empty-state h2 { font-size: 16px; color: var(--text); margin-bottom: 6px; }
+  .empty-state p { font-size: 13px; }
+
+  /* TOAST */
+  #toast { position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%) translateY(80px); background: var(--surface2); border: 1px solid var(--border); border-radius: 8px; padding: 10px 20px; font-size: 13px; color: var(--text); z-index: 9999; transition: transform 0.3s; white-space: nowrap; box-shadow: 0 8px 24px rgba(0,0,0,0.5); }
+  #toast.show { transform: translateX(-50%) translateY(0); }
+  #toast.success { border-color: var(--accent); color: var(--accent); }
+  #toast.error { border-color: var(--danger); color: var(--danger); }
+
+  /* RANKING TABLE */
+  .rank-num { font-weight: 800; color: var(--muted); width: 32px; text-align: center; }
+  .rank-num.gold { color: #ffd700; }
+  .rank-num.silver { color: #c0c0c0; }
+  .rank-num.bronze { color: #cd7f32; }
+
+  /* SECTION TITLE */
+  .section-title { font-size: 12px; font-weight: 700; color: var(--muted); text-transform: uppercase; letter-spacing: 1px; margin-bottom: 12px; margin-top: 20px; }
+
+  /* COMPARADOR */
+  .comparador-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 20px; }
+  @media (max-width: 700px) { .comparador-grid { grid-template-columns: 1fr; } }
+  .comparador-table { width: 100%; border-collapse: collapse; font-size: 12px; }
+  .comparador-table th { background: var(--surface2); padding: 8px 12px; font-size: 10px; font-weight: 700; color: var(--muted); text-transform: uppercase; letter-spacing: 0.5px; white-space: nowrap; }
+  .comparador-table td { padding: 8px 12px; border-bottom: 1px solid rgba(42,51,68,0.4); }
+
+  /* FILTER BAR IN PANEL */
+  .filter-bar { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; padding: 10px 18px; border-bottom: 1px solid var(--border); background: var(--surface2); }
+  .filter-bar label { font-size: 11px; color: var(--muted); white-space: nowrap; }
+  .filter-bar select { background: var(--bg); border: 1px solid var(--border); color: var(--text); border-radius: 6px; padding: 5px 8px; font-size: 12px; outline: none; }
+  .filter-bar select:focus { border-color: var(--accent); }
+
+  ::-webkit-scrollbar { width: 5px; height: 5px; }
+  ::-webkit-scrollbar-track { background: var(--surface); }
+  ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+
+  .progress-bar { height: 4px; background: var(--border); border-radius: 2px; overflow: hidden; margin-top: 6px; }
+  .progress-fill { height: 100%; background: var(--accent); border-radius: 2px; transition: width 0.4s; }
+  .diff-badge { font-size: 11px; font-weight: 700; padding: 2px 7px; border-radius: 4px; }
+  .diff-badge.green { background: rgba(0,201,167,0.15); color: var(--accent); }
+  .diff-badge.red { background: rgba(255,77,109,0.15); color: var(--danger); }
+
+  /* MELHOR OPORTUNIDADE DE COMPRA */
+  .opp-card { display: flex; background: linear-gradient(135deg, rgba(0,201,167,0.14), rgba(123,97,255,0.05)); border: 1px solid var(--accent); border-radius: var(--radius); padding: 20px 24px; margin-bottom: 20px; align-items: center; gap: 24px; flex-wrap: wrap; }
+  .opp-badge { background: var(--accent); color: #000; font-weight: 800; font-size: 10px; letter-spacing: 1px; padding: 4px 12px; border-radius: 20px; white-space: nowrap; }
+  .opp-main { flex: 1; min-width: 220px; }
+  .opp-title { font-size: 17px; font-weight: 800; margin-top: 6px; }
+  .opp-sub { font-size: 12px; color: var(--muted); margin-top: 3px; }
+  .opp-stats { display: flex; gap: 26px; flex-wrap: wrap; }
+  .opp-stat { text-align: right; }
+  .opp-stat-label { font-size: 10px; font-weight: 700; letter-spacing: 0.5px; color: var(--muted); text-transform: uppercase; }
+  .opp-stat-value { font-size: 20px; font-weight: 800; color: var(--text); white-space: nowrap; }
+  .opp-stat-value.accent { color: var(--accent); }
+
+  /* SEMÁFORO DE COMPRA */
+  .semaforo { display: inline-flex; align-items: center; gap: 4px; padding: 3px 9px; border-radius: 6px; font-size: 11px; font-weight: 700; white-space: nowrap; }
+  .semaforo.verde { background: rgba(0,201,167,0.18); color: var(--accent); }
+  .semaforo.amarelo { background: rgba(255,183,3,0.18); color: var(--warn); }
+  .semaforo.vermelho { background: rgba(255,77,109,0.18); color: var(--danger); }
+  .semaforo.cinza { background: rgba(139,148,158,0.15); color: var(--muted); }
+
+  /* PRIORIDADE DE NEGOCIAÇÃO */
+  .prio-badge { display: inline-block; padding: 2px 9px; border-radius: 4px; font-size: 10px; font-weight: 800; letter-spacing: 0.5px; text-transform: uppercase; }
+  .prio-badge.alta { background: rgba(255,77,109,0.18); color: var(--danger); }
+  .prio-badge.media { background: rgba(255,183,3,0.18); color: var(--warn); }
+  .prio-badge.baixa { background: rgba(139,148,158,0.15); color: var(--muted); }
+</style>
+</head>
+<body>
+
+<div id="toast"></div>
+
+<header>
+  <div class="header-left">
+    <div class="logo-pill">FARMÁCIA</div>
+    <div>
+      <h1>Dashboard de Comparação de Preços</h1>
+      <div class="subtitle" id="headerSubtitle">Carregue a planilha para começar</div>
+    </div>
+  </div>
+  <div class="header-right">
+    <button class="sidebar-toggle" id="sidebarToggleBtn" title="Recolher filtros" onclick="toggleSidebar()">☰</button>
+    <label class="upload-btn" title="Carregar planilha">
+      📂 Carregar planilha
+      <input type="file" id="fileInputHeader" accept=".xlsx,.xls">
+    </label>
+  </div>
+</header>
+
+<!-- NAV TABS (oculto até ter dados) -->
+<div id="navTabs" style="display:none">
+  <div class="nav-tabs">
+    <div class="nav-tab active" data-tab="compras" onclick="switchTab('compras')">📦 Compras</div>
+    <div class="nav-tab" data-tab="substancia" onclick="switchTab('substancia')">💊 Por Substância</div>
+    <div class="nav-tab" data-tab="laboratorio" onclick="switchTab('laboratorio')">🏭 Por Laboratório</div>
+    <div class="nav-tab" data-tab="comparador" onclick="switchTab('comparador')">⚖️ Comparador Avançado</div>
+    <div class="nav-tab" data-tab="executivo" onclick="switchTab('executivo')">📊 Visão Executiva</div>
+  </div>
+</div>
+
+<div class="app-body">
+
+  <!-- SIDEBAR (filtros laterais) -->
+  <div id="sidebar">
+    <div class="sidebar-inner" id="sidebarInner">
+
+      <!-- FILTROS DA ABA COMPRAS -->
+      <div id="sidebarCompras">
+        <div class="sidebar-section">
+          <div class="sidebar-title">💊 Substâncias</div>
+          <div class="ms-wrap" id="comprasSubsWrap">
+            <div class="ms-box" id="comprasSubsBox" onclick="toggleMs('comprasSubs')">
+              <span class="ms-placeholder" id="comprasSubsPlaceholder">Todas as substâncias…</span>
+              <input type="text" class="ms-input" id="comprasSubsInput" placeholder="" oninput="filterMs('comprasSubs',this.value)" onclick="event.stopPropagation()" disabled>
+            </div>
+            <div class="ms-dropdown" id="comprasSubsDropdown">
+              <div class="ms-select-all"><span onclick="selectAllMs('comprasSubs')">Selecionar todos</span><span onclick="clearMs('comprasSubs')">Limpar</span></div>
+              <div id="comprasSubsOptions"></div>
+            </div>
+          </div>
+        </div>
+        <div class="sidebar-section">
+          <div class="sidebar-title">🏭 Laboratórios</div>
+          <div class="ms-wrap" id="comprasLabsWrap">
+            <div class="ms-box" id="comprasLabsBox" onclick="toggleMs('comprasLabs')">
+              <span class="ms-placeholder" id="comprasLabsPlaceholder">Todos os laboratórios…</span>
+              <input type="text" class="ms-input" id="comprasLabsInput" placeholder="" oninput="filterMs('comprasLabs',this.value)" onclick="event.stopPropagation()">
+            </div>
+            <div class="ms-dropdown" id="comprasLabsDropdown">
+              <div class="ms-select-all"><span onclick="selectAllMs('comprasLabs')">Selecionar todos</span><span onclick="clearMs('comprasLabs')">Limpar</span></div>
+              <div id="comprasLabsOptions"></div>
+            </div>
+          </div>
+        </div>
+        <div class="sidebar-section">
+          <div class="sidebar-title">📦 Produto</div>
+          <div class="ms-wrap" id="comprasProdsWrap">
+            <div class="ms-box" id="comprasProdsBox" onclick="toggleMs('comprasProds')">
+              <span class="ms-placeholder" id="comprasProdsPlaceholder">Todos os produtos…</span>
+              <input type="text" class="ms-input" id="comprasProdsInput" placeholder="" oninput="filterMs('comprasProds',this.value)" onclick="event.stopPropagation()">
+            </div>
+            <div class="ms-dropdown" id="comprasProdsDropdown">
+              <div class="ms-select-all"><span onclick="selectAllMs('comprasProds')">Selecionar todos</span><span onclick="clearMs('comprasProds')">Limpar</span></div>
+              <div id="comprasProdsOptions"></div>
+            </div>
+          </div>
+        </div>
+        <div class="sidebar-section">
+          <div class="sidebar-title">📋 Apresentação</div>
+          <div class="ms-wrap" id="comprasApresWrap">
+            <div class="ms-box" id="comprasApresBox" onclick="toggleMs('comprasApres')">
+              <span class="ms-placeholder" id="comprasApresPlaceholder">Todas as apresentações…</span>
+              <input type="text" class="ms-input" id="comprasApresInput" placeholder="" oninput="filterMs('comprasApres',this.value)" onclick="event.stopPropagation()">
+            </div>
+            <div class="ms-dropdown" id="comprasApresDropdown">
+              <div class="ms-select-all"><span onclick="selectAllMs('comprasApres')">Selecionar todos</span><span onclick="clearMs('comprasApres')">Limpar</span></div>
+              <div id="comprasApresOptions"></div>
+            </div>
+          </div>
+        </div>
+        <div class="sidebar-section">
+          <div class="sidebar-title">🚦 Status de Compra</div>
+          <div class="chip-row" id="comprasStatusChipRow">
+            <div class="chip active" data-status="">Todos</div>
+            <div class="chip" data-status="verde">🟢 Comprar</div>
+            <div class="chip" data-status="amarelo">🟡 Atenção</div>
+            <div class="chip" data-status="vermelho">🔴 Não comprar</div>
+          </div>
+        </div>
+        <div class="sidebar-section">
+          <div class="sidebar-title">⚙️ Ações</div>
+          <div style="display:flex;flex-direction:column;gap:8px;">
+            <button class="btn-danger" onclick="clearComprasFilters()">🗑 Limpar filtros</button>
+            <button class="btn-secondary" onclick="exportarCompras()">⬇ Exportar para Excel</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- FILTROS DA ABA SUBSTÂNCIA -->
+      <div id="sidebarSubstancia" style="display:none">
+        <div class="sidebar-section">
+          <div class="sidebar-title">🔍 Substâncias Ativas</div>
+          <div class="ms-wrap" id="substSubsWrap">
+            <div class="ms-box" id="substSubsBox" onclick="toggleMs('substSubs')">
+              <span class="ms-placeholder" id="substSubsPlaceholder">Buscar substância…</span>
+              <input type="text" class="ms-input" id="substanciaInput" placeholder="" oninput="filterMs('substSubs',this.value)" onclick="event.stopPropagation()" disabled>
+            </div>
+            <div class="ms-dropdown" id="substSubsDropdown">
+              <div class="ms-select-all"><span onclick="selectAllMs('substSubs')">Selecionar todos</span><span onclick="clearMs('substSubs')">Limpar</span></div>
+              <div id="substSubsOptions"></div>
+            </div>
+          </div>
+          <div class="chip-row" id="chipRow" style="margin-top:8px">
+            <div class="chip active" data-tipo="">Todos</div>
+            <div class="chip" data-tipo="GENÉRICO">Genérico</div>
+            <div class="chip" data-tipo="SIMILAR">Similar</div>
+            <div class="chip" data-tipo="NOVO">Novo</div>
+            <div class="chip" data-tipo="BIOLÓGICO">Biológico</div>
+          </div>
+        </div>
+
+        <div class="sidebar-section">
+          <div class="sidebar-title">🔢 EAN</div>
+          <div class="ms-wrap" id="eanSearchWrap">
+            <div class="ms-box" id="eanSearchBox" onclick="toggleMs('eanSearch')">
+              <span class="ms-placeholder" id="eanSearchPlaceholder">Buscar por EAN…</span>
+              <input type="text" class="ms-input" id="eanSearchInput" placeholder="" oninput="filterMs('eanSearch',this.value)" onclick="event.stopPropagation()">
+            </div>
+            <div class="ms-dropdown" id="eanSearchDropdown">
+              <div class="ms-select-all"><span onclick="selectAllMs('eanSearch')">Selecionar todos</span><span onclick="clearMs('eanSearch')">Limpar</span></div>
+              <div id="eanSearchOptions"></div>
+            </div>
+          </div>
+        </div>
+
+        <div class="sidebar-section">
+          <div class="sidebar-title">📦 Produto</div>
+          <div class="ms-wrap" id="prodSearchWrap">
+            <div class="ms-box" id="prodSearchBox" onclick="toggleMs('prodSearch')">
+              <span class="ms-placeholder" id="prodSearchPlaceholder">Buscar por produto…</span>
+              <input type="text" class="ms-input" id="prodSearchInput" placeholder="" oninput="filterMs('prodSearch',this.value)" onclick="event.stopPropagation()">
+            </div>
+            <div class="ms-dropdown" id="prodSearchDropdown">
+              <div class="ms-select-all"><span onclick="selectAllMs('prodSearch')">Selecionar todos</span><span onclick="clearMs('prodSearch')">Limpar</span></div>
+              <div id="prodSearchOptions"></div>
+            </div>
+          </div>
+        </div>
+
+        <div class="sidebar-section">
+          <div class="sidebar-title">📋 Apresentação (busca)</div>
+          <div class="ms-wrap" id="apresSearchWrap">
+            <div class="ms-box" id="apresSearchBox" onclick="toggleMs('apresSearch')">
+              <span class="ms-placeholder" id="apresSearchPlaceholder">Buscar por apresentação…</span>
+              <input type="text" class="ms-input" id="apresSearchInput" placeholder="" oninput="filterMs('apresSearch',this.value)" onclick="event.stopPropagation()">
+            </div>
+            <div class="ms-dropdown" id="apresSearchDropdown">
+              <div class="ms-select-all"><span onclick="selectAllMs('apresSearch')">Selecionar todos</span><span onclick="clearMs('apresSearch')">Limpar</span></div>
+              <div id="apresSearchOptions"></div>
+            </div>
+          </div>
+        </div>
+
+        <div class="sidebar-section" id="apresSection" style="display:none">
+          <div class="sidebar-title">💊 Refinar apresentação</div>
+          <div class="apres-filter" id="apresFilter"></div>
+        </div>
+
+        <div class="sidebar-section">
+          <div class="sidebar-title">⚙️ Ações</div>
+          <div style="display:flex;flex-direction:column;gap:8px;">
+            <button class="btn-danger" onclick="clearFilters()">🗑 Limpar filtros</button>
+            <button class="btn-secondary" onclick="exportarTabela()">⬇ Exportar para Excel</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- FILTROS DA ABA LABORATÓRIO -->
+      <div id="sidebarLaboratorio" style="display:none">
+        <div class="sidebar-section">
+          <div class="sidebar-title">🏭 Laboratórios</div>
+          <div class="ms-wrap" id="labLabsWrap">
+            <div class="ms-box" id="labLabsBox" onclick="toggleMs('labLabs')">
+              <span class="ms-placeholder" id="labLabsPlaceholder">Buscar laboratório…</span>
+              <input type="text" class="ms-input" id="labInput" placeholder="" oninput="filterMs('labLabs',this.value)" onclick="event.stopPropagation()" disabled>
+            </div>
+            <div class="ms-dropdown" id="labLabsDropdown">
+              <div class="ms-select-all"><span onclick="selectAllMs('labLabs')">Selecionar todos</span><span onclick="clearMs('labLabs')">Limpar</span></div>
+              <div id="labLabsOptions"></div>
+            </div>
+          </div>
+        </div>
+        <div class="sidebar-section">
+          <div style="display:flex;flex-direction:column;gap:8px;">
+            <button class="btn-danger" onclick="clearLabFilters()">🗑 Limpar filtros</button>
+            <button class="btn-secondary" onclick="exportarTabelaLab()">⬇ Exportar para Excel</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- FILTROS DO COMPARADOR -->
+      <div id="sidebarComparador" style="display:none">
+        <div class="sidebar-section">
+          <div class="sidebar-title">🏭 Laboratórios</div>
+          <div class="ms-wrap" id="compLabsWrap">
+            <div class="ms-box" id="compLabsBox" onclick="toggleMs('compLabs')">
+              <span class="ms-placeholder" id="compLabsPlaceholder">Selecionar laboratórios…</span>
+              <input type="text" class="ms-input" id="compLabsInput" placeholder="" oninput="filterMs('compLabs',this.value)" onclick="event.stopPropagation()">
+            </div>
+            <div class="ms-dropdown" id="compLabsDropdown">
+              <div class="ms-select-all"><span onclick="selectAllMs('compLabs')">Selecionar todos</span><span onclick="clearMs('compLabs')">Limpar</span></div>
+              <div id="compLabsOptions"></div>
+            </div>
+          </div>
+        </div>
+        <div class="sidebar-section">
+          <div class="sidebar-title">💊 Substâncias <span id="compSubsAvailCount" style="font-size:10px;color:var(--muted);font-weight:400;text-transform:none;letter-spacing:0"></span></div>
+          <div class="ms-wrap" id="compSubsWrap">
+            <div class="ms-box" id="compSubsBox" onclick="toggleMs('compSubs')">
+              <span class="ms-placeholder" id="compSubsPlaceholder">Selecionar substâncias…</span>
+              <input type="text" class="ms-input" id="compSubsInput" placeholder="" oninput="filterMs('compSubs',this.value)" onclick="event.stopPropagation()">
+            </div>
+            <div class="ms-dropdown" id="compSubsDropdown">
+              <div class="ms-select-all"><span onclick="selectAllMs('compSubs')">Selecionar todos</span><span onclick="clearMs('compSubs')">Limpar</span></div>
+              <div id="compSubsOptions"></div>
+            </div>
+          </div>
+        </div>
+        <div class="sidebar-section" id="compApresSection" style="display:none">
+          <div class="sidebar-title">📦 Apresentação <span id="compApresAvailCount" style="font-size:10px;color:var(--muted);font-weight:400;text-transform:none;letter-spacing:0"></span></div>
+          <div class="ms-wrap" id="compApresWrap">
+            <div class="ms-box" id="compApresBox" onclick="toggleMs('compApres')">
+              <span class="ms-placeholder" id="compApresPlaceholder">Todas as apresentações…</span>
+              <input type="text" class="ms-input" id="compApresInput" placeholder="" oninput="filterMs('compApres',this.value)" onclick="event.stopPropagation()">
+            </div>
+            <div class="ms-dropdown" id="compApresDropdown">
+              <div class="ms-select-all"><span onclick="selectAllMs('compApres')">Selecionar todos</span><span onclick="clearMs('compApres')">Limpar</span></div>
+              <div id="compApresOptions"></div>
+            </div>
+          </div>
+        </div>
+        <div class="sidebar-section">
+          <div style="display:flex;flex-direction:column;gap:8px;">
+            <button class="btn-primary" style="font-size:12px;" onclick="renderComparador()">▶ Comparar</button>
+            <button class="btn-danger" onclick="clearComparador()">🗑 Limpar</button>
+            <button class="btn-secondary" onclick="exportarComparador()">⬇ Exportar Excel</button>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- MAIN CONTENT -->
+  <div id="mainContent">
+
+    <!-- UPLOAD AREA -->
+    <div id="uploadArea">
+      <div class="upload-icon">📊</div>
+      <h2>Nenhuma planilha carregada</h2>
+      <p>Arraste o arquivo aqui ou clique para selecionar</p>
+      <label class="btn-primary">
+        Selecionar arquivo .xlsx
+        <input type="file" id="fileInputMain" accept=".xlsx,.xls">
+      </label>
+      <p style="font-size:12px;color:var(--muted);margin-top:12px;">Compatível com BASE_DADOS.xlsx · aba "DASHBOARD_BASE" (lê também HISTORICO_COMPRA e COTAÇÕES, se presentes)</p>
+    </div>
+
+    <!-- ABA: COMPRAS (principal) -->
+    <div id="tabCompras" style="display:none">
+
+      <!-- ALERTAS EXECUTIVOS -->
+      <div class="kpi-grid" id="comprasAlertRow">
+        <div class="kpi"><div class="kpi-label">Itens na seleção</div><div class="kpi-value" id="comprasAlertTotal">—</div></div>
+        <div class="kpi highlight"><div class="kpi-label">Economia potencial total</div><div class="kpi-value" id="comprasAlertEconomia">—</div></div>
+        <div class="kpi purple"><div class="kpi-label">Oportunidades de economia</div><div class="kpi-value" id="comprasAlertOportunidades">—</div></div>
+        <div class="kpi danger"><div class="kpi-label">Itens c/ aumento de preço</div><div class="kpi-value" id="comprasAlertAumento">—</div></div>
+        <div class="kpi"><div class="kpi-label">Itens c/ redução de preço</div><div class="kpi-value" id="comprasAlertReducao">—</div></div>
+        <div class="kpi warn"><div class="kpi-label">Itens sem cotação</div><div class="kpi-value" id="comprasAlertSemCotacao">—</div></div>
+      </div>
+
+      <!-- MELHOR OPORTUNIDADE DE COMPRA -->
+      <div class="opp-card" id="oppCard" style="display:none">
+        <div class="opp-badge">🏆 MELHOR OPORTUNIDADE DE COMPRA</div>
+        <div class="opp-main">
+          <div class="opp-title" id="oppProduto">—</div>
+          <div class="opp-sub" id="oppDetalhe">—</div>
+          <div class="opp-sub">Melhor opção agora: <strong id="oppLab">—</strong></div>
+        </div>
+        <div class="opp-stats">
+          <div class="opp-stat"><div class="opp-stat-label">Último Pago</div><div class="opp-stat-value" id="oppUltimo">—</div></div>
+          <div class="opp-stat"><div class="opp-stat-label">Melhor Preço</div><div class="opp-stat-value accent" id="oppMelhor">—</div></div>
+          <div class="opp-stat"><div class="opp-stat-label">Economia</div><div class="opp-stat-value accent" id="oppEconomiaRS">—</div></div>
+          <div class="opp-stat"><div class="opp-stat-label">Economia %</div><div class="opp-stat-value accent" id="oppEconomiaPct">—</div></div>
+        </div>
+      </div>
+      <div class="empty-state" id="oppEmpty" style="display:none">
+        <div class="big-icon">✅</div>
+        <h2>Nenhuma oportunidade de economia nos filtros atuais</h2>
+        <p>Os itens selecionados já estão na melhor cotação disponível, ou faltam dados de preço/compra.</p>
+      </div>
+
+      <!-- TABELA PRINCIPAL DE COMPRAS -->
+      <div class="panel">
+        <div class="panel-header">
+          <div class="panel-header-left">📦 Tabela de Compras <span class="panel-count" id="comprasTableCount">0 itens</span></div>
+        </div>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th onclick="sortCompras('SUBSTANCIA')" id="thc-SUBSTANCIA">Substância <span class="sort-arrow">↕</span></th>
+                <th onclick="sortCompras('PRODUTO')" id="thc-PRODUTO">Produto <span class="sort-arrow">↕</span></th>
+                <th onclick="sortCompras('APRESENTACAO')" id="thc-APRESENTACAO">Apresentação <span class="sort-arrow">↕</span></th>
+                <th onclick="sortCompras('LABORATORIO')" id="thc-LABORATORIO">Laboratório <span class="sort-arrow">↕</span></th>
+                <th onclick="sortCompras('_ultimoPago')" id="thc-_ultimoPago" style="text-align:right">Último Preço Pago <span class="sort-arrow">↕</span></th>
+                <th onclick="sortCompras('_melhorCotacao')" id="thc-_melhorCotacao" style="text-align:right">Melhor Cotação Atual <span class="sort-arrow">↕</span></th>
+                <th onclick="sortCompras('ECONOMIA_POTENCIAL')" id="thc-ECONOMIA_POTENCIAL" style="text-align:right">Diferença R$ <span class="sort-arrow">↕</span></th>
+                <th onclick="sortCompras('_diffPct')" id="thc-_diffPct" style="text-align:right">Diferença % <span class="sort-arrow">↕</span></th>
+                <th>Status de Compra</th>
+                <th>Recomendação</th>
+                <th>Último Comprador</th>
+                <th onclick="sortCompras('_diffVsUltimoComprador')" id="thc-_diffVsUltimoComprador" style="text-align:right">Dif. vs Último Comprador <span class="sort-arrow">↕</span></th>
+              </tr>
+            </thead>
+            <tbody id="comprasTableBody"></tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- RANKING DE ECONOMIA -->
+      <div class="panel">
+        <div class="panel-header">
+          <div class="panel-header-left">📊 Ranking de Economia <span class="panel-count" id="rankingEconomiaCount">0 itens</span></div>
+        </div>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>#</th><th>Produto</th><th>Laboratório</th>
+                <th style="text-align:right">Último Preço Pago</th>
+                <th style="text-align:right">Melhor Cotação</th>
+                <th style="text-align:right">Economia R$</th>
+                <th style="text-align:right">Economia %</th>
+              </tr>
+            </thead>
+            <tbody id="rankingEconomiaBody"></tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- PRIORIDADE DE NEGOCIAÇÃO -->
+      <div class="panel">
+        <div class="panel-header">
+          <div class="panel-header-left">🤝 Prioridade de Negociação <span class="panel-count" id="prioridadeCount">0 itens</span></div>
+        </div>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>Produto</th><th>Laboratório</th>
+                <th style="text-align:right">Economia Potencial</th>
+                <th style="text-align:right">Diferença %</th>
+                <th>Prioridade</th>
+              </tr>
+            </thead>
+            <tbody id="prioridadeBody"></tbody>
+          </table>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- ABA: SUBSTÂNCIA -->
+    <div id="tabSubstancia" style="display:none">
+      <!-- KPIs -->
+      <div class="kpi-grid" id="kpiRow">
+        <div class="kpi"><div class="kpi-label">Produtos encontrados</div><div class="kpi-value" id="kpiTotal">—</div><div class="kpi-sub" id="kpiSubTotal"></div></div>
+        <div class="kpi"><div class="kpi-label">Laboratórios</div><div class="kpi-value" id="kpiLabs">—</div></div>
+        <div class="kpi highlight"><div class="kpi-label">Menor preço</div><div class="kpi-value" id="kpiMin">—</div><div class="kpi-sub" id="kpiMinSub"></div></div>
+        <div class="kpi danger"><div class="kpi-label">Maior preço</div><div class="kpi-value" id="kpiMax">—</div><div class="kpi-sub" id="kpiMaxSub"></div></div>
+        <div class="kpi"><div class="kpi-label">Preço médio</div><div class="kpi-value" id="kpiAvg">—</div></div>
+        <div class="kpi warn"><div class="kpi-label">Diferença %</div><div class="kpi-value" id="kpiDiff">—</div><div class="kpi-sub">entre min e max</div></div>
+      </div>
+
+      <!-- WINNER -->
+      <div id="winnerBanner">
+        <span class="winner-badge">🏆 MAIS BARATO</span>
+        <div class="winner-info">
+          <div class="winner-name" id="winnerName">—</div>
+          <div class="winner-detail" id="winnerDetail">—</div>
+        </div>
+        <div class="winner-price" id="winnerPrice">—</div>
+      </div>
+
+      <!-- EMPTY STATE -->
+      <div class="empty-state" id="emptyState" style="display:none">
+        <div class="big-icon">💊</div>
+        <h2>Nenhuma substância selecionada</h2>
+        <p>Use o campo ao lado para buscar uma substância ativa.</p>
+      </div>
+
+      <!-- TABELA + GRÁFICO -->
+      <div id="contentGrid" style="display:none">
+        <div class="stacked-full">
+          <div class="panel">
+            <div class="panel-header">
+              <div class="panel-header-left">Tabela Comparativa <span class="panel-count" id="tableCount">0 itens</span></div>
+            </div>
+            <div class="table-wrap">
+              <table>
+                <thead>
+                  <tr>
+                    <th onclick="sortTable('LABORATORIO')" id="th-LABORATORIO">Laboratório <span class="sort-arrow">↕</span></th>
+                    <th onclick="sortTable('PRODUTO')" id="th-PRODUTO">Produto <span class="sort-arrow">↕</span></th>
+                    <th onclick="sortTable('APRESENTACAO')" id="th-APRESENTACAO">Apresentação <span class="sort-arrow">↕</span></th>
+                    <th onclick="sortTable('TIPO_PRODUTO')" id="th-TIPO_PRODUTO">Tipo <span class="sort-arrow">↕</span></th>
+                    <th onclick="sortTable('PRECO')" id="th-PRECO">Preço <span class="sort-arrow">↕</span></th>
+                    <th onclick="sortTable('ULTIMO_PRECO_PAGO')" id="th-ULTIMO_PRECO_PAGO">Última Compra <span class="sort-arrow">↕</span></th>
+                  </tr>
+                </thead>
+                <tbody id="tableBody"></tbody>
+              </table>
+            </div>
+          </div>
+          <div class="panel">
+            <div class="panel-header">Gráfico de Preços <span class="panel-count" id="chartCount">por produto</span></div>
+            <div class="chart-wrap"><canvas id="barChart"></canvas></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ABA: LABORATÓRIO -->
+    <div id="tabLaboratorio" style="display:none">
+      <div class="empty-state" id="emptyStateLab">
+        <div class="big-icon">🏭</div>
+        <h2>Nenhum laboratório selecionado</h2>
+        <p>Use o campo ao lado para buscar um laboratório.</p>
+      </div>
+      <div id="labContent" style="display:none">
+        <div class="kpi-grid" id="labKpiRow">
+          <div class="kpi"><div class="kpi-label">Produtos</div><div class="kpi-value" id="labKpiTotal">—</div></div>
+          <div class="kpi purple"><div class="kpi-label">Substâncias</div><div class="kpi-value" id="labKpiSubs">—</div></div>
+          <div class="kpi highlight"><div class="kpi-label">Menor preço</div><div class="kpi-value" id="labKpiMin">—</div></div>
+          <div class="kpi danger"><div class="kpi-label">Maior preço</div><div class="kpi-value" id="labKpiMax">—</div></div>
+          <div class="kpi"><div class="kpi-label">Preço médio</div><div class="kpi-value" id="labKpiAvg">—</div></div>
+        </div>
+        <div class="panel">
+          <div class="panel-header">
+            <div class="panel-header-left">Produtos <span class="panel-count" id="labTableCount">0</span></div>
+            <div class="panel-actions">
+              <input type="text" class="search-input" style="width:200px;padding:6px 10px;" placeholder="Filtrar…" id="labTableSearch" oninput="filterLabTable(this.value)">
+            </div>
+          </div>
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th id="labColLab" style="display:none">Laboratório</th>
+                  <th>Substância</th>
+                  <th>Produto</th>
+                  <th>Apresentação</th>
+                  <th>Tipo</th>
+                  <th>Regime</th>
+                  <th style="text-align:right">Preço</th>
+                  <th>Última Compra</th>
+                </tr>
+              </thead>
+              <tbody id="labTableBody"></tbody>
+            </table>
+          </div>
+        </div>
+        <div class="panel">
+          <div class="panel-header">Distribuição por Substância</div>
+          <div class="chart-wrap"><canvas id="labChart" style="max-height:320px"></canvas></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ABA: COMPARADOR AVANÇADO -->
+    <div id="tabComparador" style="display:none">
+      <div class="empty-state" id="emptyStateComp">
+        <div class="big-icon">⚖️</div>
+        <h2>Configure o comparador</h2>
+        <p>Selecione substâncias e laboratórios ao lado e clique em Comparar.</p>
+      </div>
+      <div id="comparadorContent" style="display:none">
+        <div class="panel">
+          <div class="panel-header">Matriz de Comparação de Preços</div>
+          <div class="table-wrap">
+            <table>
+              <thead id="compMatrizHead"></thead>
+              <tbody id="compMatrizBody"></tbody>
+            </table>
+          </div>
+        </div>
+        <div class="two-col" style="margin-top:0">
+          <div class="panel">
+            <div class="panel-header">Ranking de Laboratórios (preço médio)</div>
+            <div class="chart-wrap"><canvas id="compRankChart" style="max-height:300px"></canvas></div>
+          </div>
+          <div class="panel">
+            <div class="panel-header">Amplitude de Preços por Substância</div>
+            <div class="chart-wrap"><canvas id="compAmplChart" style="max-height:300px"></canvas></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ABA: EXECUTIVO -->
+    <div id="tabExecutivo" style="display:none">
+      <div class="empty-state" id="emptyStateExec" style="display:none">
+        <div class="big-icon">📊</div>
+        <h2>Sem dados</h2>
+        <p>Carregue a planilha para ver a visão executiva.</p>
+      </div>
+      <div id="execContent">
+        <div class="panel-header" style="margin-bottom:8px">📦 Indicadores de Compras</div>
+        <div class="kpi-grid" id="comprasKpiRow">
+          <div class="kpi purple"><div class="kpi-label">Total de medicamentos</div><div class="kpi-value" id="kpiTotalMeds">—</div></div>
+          <div class="kpi"><div class="kpi-label">Total de laboratórios</div><div class="kpi-value" id="kpiTotalLabsCompras">—</div></div>
+          <div class="kpi highlight"><div class="kpi-label">Economia potencial total</div><div class="kpi-value" id="kpiEconomiaPotencial">—</div></div>
+          <div class="kpi warn"><div class="kpi-label">Itens sem cotação</div><div class="kpi-value" id="kpiSemCotacao">—</div></div>
+          <div class="kpi danger"><div class="kpi-label">Itens com aumento de preço</div><div class="kpi-value" id="kpiAumento">—</div></div>
+          <div class="kpi"><div class="kpi-label">Itens com redução de preço</div><div class="kpi-value" id="kpiReducao">—</div></div>
+        </div>
+
+        <div class="two-col">
+          <div class="panel">
+            <div class="panel-header">🏆 Top 20 Itens com Maior Economia Potencial</div>
+            <div class="chart-wrap"><canvas id="top20ItensChart" style="max-height:420px"></canvas></div>
+          </div>
+          <div class="panel">
+            <div class="panel-header">💸 Economia Potencial por Laboratório (itens acima do menor preço)</div>
+            <div class="chart-wrap"><canvas id="acimaMenorPrecoChart" style="max-height:420px"></canvas></div>
+          </div>
+        </div>
+
+        <div class="two-col">
+          <div class="panel">
+            <div class="panel-header">💰 Top 10 Substâncias com Maior Economia</div>
+            <div class="chart-wrap"><canvas id="economiaChart" style="max-height:360px"></canvas></div>
+          </div>
+          <div class="panel">
+            <div class="panel-header">🏆 Laboratórios Mais Competitivos</div>
+            <div class="chart-wrap"><canvas id="competitividadeChart" style="max-height:360px"></canvas></div>
+          </div>
+        </div>
+
+        <div class="panel">
+          <div class="panel-header">📈 Evolução de Preço por Item</div>
+          <div class="search-wrap" style="max-width:480px;margin-bottom:12px">
+            <span class="search-icon">🔎</span>
+            <input type="text" class="search-input" id="evolucaoSearchInput" placeholder="Buscar item por produto, laboratório ou apresentação…" autocomplete="off" oninput="filterEvolucaoSearch(this.value)" onfocus="filterEvolucaoSearch(this.value)">
+            <div class="single-dropdown" id="evolucaoDropdown"></div>
+          </div>
+          <div id="evolucaoEmpty" style="color:var(--muted);font-size:13px">Selecione um item para ver o histórico de compras e cotações.</div>
+          <div class="chart-wrap" id="evolucaoChartWrap" style="display:none"><canvas id="evolucaoChart" style="max-height:320px"></canvas></div>
+        </div>
+
+        <div class="kpi-grid" id="execKpiRow">
+          <div class="kpi purple"><div class="kpi-label">Total de substâncias</div><div class="kpi-value" id="execKpiSubs">—</div></div>
+          <div class="kpi"><div class="kpi-label">Total de laboratórios</div><div class="kpi-value" id="execKpiLabs">—</div></div>
+          <div class="kpi"><div class="kpi-label">Total de produtos</div><div class="kpi-value" id="execKpiProds">—</div></div>
+          <div class="kpi highlight"><div class="kpi-label">Preço médio geral</div><div class="kpi-value" id="execKpiAvg">—</div></div>
+          <div class="kpi highlight"><div class="kpi-label">Lab. mais barato (avg)</div><div class="kpi-value" id="execLabMin">—</div><div class="kpi-sub" id="execLabMinVal"></div></div>
+          <div class="kpi danger"><div class="kpi-label">Lab. mais caro (avg)</div><div class="kpi-value" id="execLabMax">—</div><div class="kpi-sub" id="execLabMaxVal"></div></div>
+          <div class="kpi warn"><div class="kpi-label">+ concorrentes</div><div class="kpi-value" id="execMostComp">—</div><div class="kpi-sub" id="execMostCompVal"></div></div>
+        </div>
+      </div>
+    </div>
+
+  </div><!-- /mainContent -->
+</div><!-- /app-body -->
+
+<script>
+// ==================== STATE ====================
+let substanceMap = {};    // substancia -> [records]
+let allSubstances = [];
+let allLabs = [];
+let allRecords = [];
+let itemsById = {};        // ID_ITEM -> record (DASHBOARD_BASE)
+let historicoCompras = []; // [{ID_ITEM, DATA, VALOR}]
+let historicoCotacoes = []; // [{ID_ITEM, DATA, VALOR_COTADO}]
+
+let currentSubstance = null;
+let currentTipo = '';
+let currentApres = new Set();
+let sortKey = 'PRECO';
+let sortDir = 1;
+let chartInstance = null;
+
+let currentLab = null;
+let labChartInstance = null;
+let labTableData = [];
+
+let compSelectedSubs = new Set();
+let compSelectedLabs = new Set();
+let compChartRank = null;
+let compChartAmpl = null;
+
+let execCharts = {};
+let evolucaoItemsList = [];
+let evolucaoChartInstance = null;
+let evolucaoSelectedId = null;
+
+let comprasStatusFilter = '';   // '' | 'verde' | 'amarelo' | 'vermelho'
+let comprasSortKey = 'ECONOMIA_POTENCIAL';
+let comprasSortDir = -1;        // -1 = maior economia primeiro
+
+let currentTab = 'compras';
+
+// ==================== TOAST ====================
+function showToast(msg, type='') {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.className = 'show ' + type;
+  clearTimeout(t._timer);
+  t._timer = setTimeout(() => t.className = '', 3000);
+}
+
+// ==================== HELPERS ====================
+function normalize(s) {
+  return String(s).toUpperCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/[^A-Z0-9]/g,'');
+}
+function buildColMap(keys) {
+  const targets = {
+    ID_ITEM:      ['IDITEM'],
+    SUBSTANCIA:   ['SUBSTANCIA','SUBSTÂNCIA'],
+    LABORATORIO:  ['LABORATORIO','LABORATÓRIO'],
+    EAN1:         ['EAN1','EAN 1','EAN'],
+    PRODUTO:      ['PRODUTO'],
+    APRESENTACAO: ['APRESENTACAO','APRESENTAÇÃO'],
+    TIPO_PRODUTO: ['TIPOPRODUTO','TIPO_PRODUTO'],
+    REGIME_PRECO: ['REGIMEDEPRECO','REGIME_PRECO','REGIMEDEPRE','REGIMEDEPREÇO'],
+    PRECO:        ['PRECO','PREÇO'],
+    QTD:          ['QTD','QUANTIDADE'],
+    // Campos consolidados pela própria planilha (aba DASHBOARD_BASE)
+    ULTIMA_COMPRA:          ['ULTIMACOMPRA'],
+    ULTIMO_PRECO_PAGO:      ['ULTIMOPRECOPAGO'],
+    MENOR_PRECO_HISTORICO:  ['MENORPRECOHISTORICO'],
+    MAIOR_PRECO_HISTORICO:  ['MAIORPRECOHISTORICO'],
+    PRECO_MEDIO_HISTORICO:  ['PRECOMEDIOHISTORICO'],
+    ULTIMA_COTACAO:         ['ULTIMACOTACAO'],
+    ECONOMIA_POTENCIAL:     ['ECONOMIAPOTENCIAL'],
+    STATUS_PRECO:           ['STATUSPRECO'],
+  };
+  const map = {};
+  for (const [field, variants] of Object.entries(targets)) {
+    map[field] = keys.find(k => variants.includes(normalize(k)))
+      || keys.find(k => normalize(k).includes(normalize(field.split('_')[0]))) || '';
+  }
+  return map;
+}
+// Converte valor de data vindo da planilha (Date, serial ou string) para um Date ou null
+function parseSheetDate(v) {
+  if (v === null || v === undefined || v === '') return null;
+  if (v instanceof Date) return isNaN(v) ? null : v;
+  if (typeof v === 'number') return new Date(Math.round((v - 25569) * 86400 * 1000));
+  const d = new Date(v);
+  return isNaN(d) ? null : d;
+}
+function fmtData(v) {
+  const d = parseSheetDate(v);
+  return d ? d.toLocaleDateString('pt-BR') : '—';
+}
+function formatPrice(v) {
+  if (v === null || v === undefined || v === '') return null;
+  const n = parseFloat(v);
+  return isNaN(n) ? null : n;
+}
+function fmtBRL(v) {
+  return new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(v);
+}
+function pct(a,b) {
+  if (!b) return 0;
+  return ((a-b)/b*100);
+}
+
+// ==================== MOTOR DE DECISÃO DE COMPRAS ====================
+// "Preço atual" de um item: prioriza a ÚLTIMA_COTAÇÃO (cotação recebida);
+// se ausente, usa o campo PREÇO (preço de tabela) como substituto.
+function getPrecoAtualField(r) {
+  const c = formatPrice(r.ULTIMA_COTACAO);
+  if (c !== null && c > 0) return c;
+  const p = formatPrice(r.PRECO);
+  return (p !== null && p > 0) ? p : null;
+}
+
+// Recalcula, para cada item, a "Melhor Cotação Atual" (menor preço atual entre
+// todos os laboratórios que vendem a MESMA substância + apresentação),
+// a Economia Potencial real (Último Preço Pago − Melhor Cotação Atual),
+// o STATUS_PRECO (corrige o bug da planilha, que sempre trazia "Redução")
+// e o semáforo de compra (Status de Compra). Tudo é gravado direto nos
+// registros (allRecords), então as telas/funções já existentes que leem
+// r.ECONOMIA_POTENCIAL e r.STATUS_PRECO passam a funcionar corretamente
+// sem precisar ser reescritas.
+function computeComprasMetrics() {
+  const groupBest = {}; // "SUBSTANCIA◆APRESENTACAO" -> { min, lab, produto }
+  const groupLastBuy = {}; // "SUBSTANCIA◆APRESENTACAO" -> { time, data, lab, produto, preco }
+  allRecords.forEach(r => {
+    r._precoAtual = getPrecoAtualField(r);
+    r._ultimoPago = formatPrice(r.ULTIMO_PRECO_PAGO);
+    const key = r.SUBSTANCIA + '◆' + r.APRESENTACAO;
+    if (r._precoAtual !== null) {
+      if (!groupBest[key] || r._precoAtual < groupBest[key].min - 1e-9) {
+        groupBest[key] = { min: r._precoAtual, lab: r.LABORATORIO, produto: r.PRODUTO };
+      }
+    }
+    // Último Comprador: entre todos os itens do grupo que já foram efetivamente
+    // comprados (têm ULTIMO_PRECO_PAGO), identifica qual foi o mais recente
+    // (maior data em ULTIMA_COMPRA). Em caso de empate de data, prevalece o
+    // de menor preço pago.
+    if (r._ultimoPago !== null) {
+      const d = parseSheetDate(r.ULTIMA_COMPRA);
+      const t = d ? d.getTime() : -Infinity;
+      const cur = groupLastBuy[key];
+      if (!cur || t > cur.time + 1 || (Math.abs(t - cur.time) <= 1 && r._ultimoPago < cur.preco - 1e-9)) {
+        groupLastBuy[key] = { time: t, data: d, lab: r.LABORATORIO, produto: r.PRODUTO, preco: r._ultimoPago };
+      }
+    }
+  });
+
+  allRecords.forEach(r => {
+    const key = r.SUBSTANCIA + '◆' + r.APRESENTACAO;
+    const best = groupBest[key] || null;
+    r._melhorCotacao = best ? best.min : null;
+    r._melhorLab = best ? best.lab : null;
+    r._melhorProduto = best ? best.produto : null;
+
+    // ÚLTIMO COMPRADOR: fornecedor (laboratório/produto) de quem efetivamente
+    // compramos pela última vez, dentro do grupo comparável.
+    const lastBuy = groupLastBuy[key] || null;
+    r._ultimoCompradorLab = lastBuy ? lastBuy.lab : null;
+    r._ultimoCompradorProduto = lastBuy ? lastBuy.produto : null;
+    r._ultimoCompradorData = lastBuy ? lastBuy.data : null;
+    r._ultimoCompradorPreco = lastBuy ? lastBuy.preco : null;
+    if (r._precoAtual !== null && r._ultimoCompradorPreco !== null) {
+      r._diffVsUltimoComprador = r._ultimoCompradorPreco - r._precoAtual; // >0 = este preço atual é melhor que o último comprador
+      r._diffVsUltimoCompradorPct = r._ultimoCompradorPreco > 0 ? (r._diffVsUltimoComprador / r._ultimoCompradorPreco * 100) : null;
+    } else {
+      r._diffVsUltimoComprador = null;
+      r._diffVsUltimoCompradorPct = null;
+    }
+
+    // STATUS_PRECO: compara o preço atual do PRÓPRIO item com o que foi pago da
+    // última vez nesse mesmo item (mesmo laboratório/produto).
+    if (r._precoAtual === null || r._ultimoPago === null) {
+      r.STATUS_PRECO = 'Sem cotação';
+    } else {
+      const tol = Math.max(r._ultimoPago * 0.005, 0.0001);
+      if (r._precoAtual > r._ultimoPago + tol) r.STATUS_PRECO = 'Aumento';
+      else if (r._precoAtual < r._ultimoPago - tol) r.STATUS_PRECO = 'Redução';
+      else r.STATUS_PRECO = 'Estável';
+    }
+
+    // ECONOMIA POTENCIAL: Último Preço Pago − Melhor Cotação Atual (entre labs).
+    // Nunca negativa — quando o melhor preço de mercado já é pior que o pago
+    // no passado, não há economia a capturar agora (fica 0).
+    if (r._ultimoPago !== null && r._melhorCotacao !== null) {
+      const diff = r._ultimoPago - r._melhorCotacao;
+      r.ECONOMIA_POTENCIAL = diff > 0 ? diff : 0;
+      r._diffPct = r._ultimoPago > 0 ? (r.ECONOMIA_POTENCIAL / r._ultimoPago * 100) : null;
+    } else {
+      r.ECONOMIA_POTENCIAL = 0;
+      r._diffPct = null;
+    }
+
+    // SEMÁFORO DE COMPRA
+    if (r._ultimoPago === null || r._melhorCotacao === null) {
+      r._statusCompra = 'cinza';
+    } else if (r._melhorCotacao <= r._ultimoPago + 1e-9) {
+      r._statusCompra = 'verde';
+    } else if (r._melhorCotacao <= r._ultimoPago * 1.10 + 1e-9) {
+      r._statusCompra = 'amarelo';
+    } else {
+      r._statusCompra = 'vermelho';
+    }
+
+    // PRIORIDADE DE NEGOCIAÇÃO
+    if (r.ECONOMIA_POTENCIAL <= 0 || r._diffPct === null) {
+      r._prioridade = '-';
+    } else if (r._diffPct >= 15) {
+      r._prioridade = 'Alta';
+    } else if (r._diffPct >= 5) {
+      r._prioridade = 'Média';
+    } else {
+      r._prioridade = 'Baixa';
+    }
+  });
+}
+
+function statusCompraBadge(status) {
+  const map = {
+    verde:    { cls: 'verde',    label: '🟢 Comprar' },
+    amarelo:  { cls: 'amarelo',  label: '🟡 Atenção' },
+    vermelho: { cls: 'vermelho', label: '🔴 Não Comprar' },
+    cinza:    { cls: 'cinza',    label: '⚪ Sem dados' },
+  };
+  const m = map[status] || map.cinza;
+  return `<span class="semaforo ${m.cls}">${m.label}</span>`;
+}
+
+function prioridadeBadge(p) {
+  if (p === 'Alta') return '<span class="prio-badge alta">Alta</span>';
+  if (p === 'Média') return '<span class="prio-badge media">Média</span>';
+  if (p === 'Baixa') return '<span class="prio-badge baixa">Baixa</span>';
+  return '<span class="prio-badge baixa" style="opacity:.5">—</span>';
+}
+
+// "Último Comprador" = laboratório/produto de quem efetivamente compramos
+// pela última vez (data mais recente) para a mesma substância + apresentação.
+function ultimoCompradorCell(r) {
+  if (!r._ultimoCompradorLab) return '<span style="color:var(--muted)">—</span>';
+  const dataStr = r._ultimoCompradorData ? r._ultimoCompradorData.toLocaleDateString('pt-BR') : '—';
+  const lab = r._ultimoCompradorLab.length > 26 ? r._ultimoCompradorLab.slice(0,26)+'…' : r._ultimoCompradorLab;
+  const mesmoItem = r._ultimoCompradorLab === r.LABORATORIO && (!r._ultimoCompradorProduto || r._ultimoCompradorProduto === r.PRODUTO);
+  const tagAtual = mesmoItem ? ' <span style="color:var(--accent);font-size:10px">(este item)</span>' : '';
+  return `<div style="font-size:12px">${lab}${tagAtual}</div><div style="font-size:10px;color:var(--muted)">${dataStr} · ${fmtBRL(r._ultimoCompradorPreco)}</div>`;
+}
+
+function diffVsUltimoCompradorCell(r) {
+  if (r._diffVsUltimoComprador === null) return '<span style="color:var(--muted)">—</span>';
+  const pct = r._diffVsUltimoCompradorPct;
+  const sinal = r._diffVsUltimoComprador >= 0 ? '+' : '';
+  const cls = r._diffVsUltimoComprador > 0 ? 'green' : (r._diffVsUltimoComprador < 0 ? 'red' : '');
+  const valor = `${sinal}${fmtBRL(r._diffVsUltimoComprador)} (${sinal}${pct.toFixed(1)}%)`;
+  return cls ? `<span class="diff-badge ${cls}">${valor}</span>` : `<span style="color:var(--muted)">${valor}</span>`;
+}
+
+function getRecomendacao(r) {
+  if (r._statusCompra === 'cinza') return 'Dados insuficientes para recomendar';
+  if (r.ECONOMIA_POTENCIAL <= 0) {
+    if (r._statusCompra === 'vermelho') return 'Aguardar ou renegociar — preços em alta';
+    if (r._statusCompra === 'amarelo') return 'Negociar antes de comprar — leve alta de preço';
+    return 'Manter compra atual — já no melhor preço';
+  }
+  const mesmoItem = r._melhorLab && r.LABORATORIO && r._melhorLab === r.LABORATORIO &&
+    (!r._melhorProduto || r._melhorProduto === r.PRODUTO);
+  if (mesmoItem) return 'Comprar agora — preço caiu no próprio fornecedor';
+  const lab = r._melhorLab || '';
+  const labShort = lab.length > 24 ? lab.slice(0,24) + '…' : lab;
+  const prod = r._melhorProduto || '';
+  const prodShort = prod.length > 22 ? prod.slice(0,22) + '…' : prod;
+  if (prod && lab) return `Negociar / trocar para ${prodShort} (${labShort})`;
+  if (lab) return `Negociar / trocar para ${labShort}`;
+  return 'Buscar nova cotação';
+}
+// Sinalizador de compra: compara o ÚLTIMO_PRECO_PAGO do item com o de outros
+// laboratórios que vendem a mesma SUBSTÂNCIA + APRESENTAÇÃO (grupo comparável).
+function getPurchaseInfo(r) {
+  const ultimo = formatPrice(r.ULTIMO_PRECO_PAGO);
+  if (ultimo === null) {
+    return { hasCompra: false, html: '<span class="badge-compra neutral">Sem compra</span>' };
+  }
+  const dataStr = fmtData(r.ULTIMA_COMPRA);
+  const group = (substanceMap[r.SUBSTANCIA] || [])
+    .filter(x => x.APRESENTACAO === r.APRESENTACAO)
+    .map(x => formatPrice(x.ULTIMO_PRECO_PAGO))
+    .filter(v => v !== null);
+  if (group.length <= 1) {
+    return { hasCompra: true, ultimo, dataStr,
+      html: `<div>${fmtBRL(ultimo)}</div><span class="badge-compra neutral">${dataStr} · único comprador</span>` };
+  }
+  const minPrice = Math.min(...group);
+  const isMin = ultimo <= minPrice + 1e-9;
+  if (isMin) {
+    return { hasCompra: true, ultimo, dataStr,
+      html: `<div>${fmtBRL(ultimo)}</div><span class="badge-compra cheapest">✓ melhor compra (${dataStr})</span>` };
+  }
+  const diff = pct(ultimo, minPrice);
+  return { hasCompra: true, ultimo, dataStr,
+    html: `<div>${fmtBRL(ultimo)}</div><span class="badge-compra expensive">+${diff.toFixed(0)}% vs. menor compra (${dataStr})</span>` };
+}
+
+// ==================== FILE READING ====================
+function findSheet(wb, candidates) {
+  const norm = s => normalize(s);
+  for (const c of candidates) {
+    const found = wb.SheetNames.find(n => norm(n) === norm(c));
+    if (found) return found;
+  }
+  return null;
+}
+function handleFile(file) {
+  if (!file) return;
+  if (!file.name.match(/\.xlsx?$/i)) { showToast('❌ Use um arquivo .xlsx', 'error'); return; }
+  showToast('⏳ Lendo planilha…');
+  const reader = new FileReader();
+  reader.onload = e => {
+    try {
+      const wb = XLSX.read(e.target.result, { type: 'array', cellDates: true });
+      const sheetName = findSheet(wb, ['DASHBOARD_BASE','FILTRADO DASH']) || wb.SheetNames[0];
+      const ws = wb.Sheets[sheetName];
+      const raw = XLSX.utils.sheet_to_json(ws, { defval: '' });
+      if (!raw.length) { showToast('❌ Planilha vazia.', 'error'); return; }
+      const colMap = buildColMap(Object.keys(raw[0]));
+      const records = raw.map(row => ({
+        ID_ITEM:      String(row[colMap.ID_ITEM]      ?? '').trim(),
+        SUBSTANCIA:   String(row[colMap.SUBSTANCIA]   || '').trim(),
+        LABORATORIO:  String(row[colMap.LABORATORIO]  || '').trim(),
+        EAN1:         String(row[colMap.EAN1]         || '').trim(),
+        PRODUTO:      String(row[colMap.PRODUTO]      || '').trim(),
+        APRESENTACAO: String(row[colMap.APRESENTACAO] || '').trim(),
+        TIPO_PRODUTO: String(row[colMap.TIPO_PRODUTO] || '').trim(),
+        REGIME_PRECO: String(row[colMap.REGIME_PRECO] || '').trim(),
+        PRECO:        row[colMap.PRECO],
+        QTD:          row[colMap.QTD],
+        ULTIMA_COMPRA:         row[colMap.ULTIMA_COMPRA],
+        ULTIMO_PRECO_PAGO:     row[colMap.ULTIMO_PRECO_PAGO],
+        MENOR_PRECO_HISTORICO: row[colMap.MENOR_PRECO_HISTORICO],
+        MAIOR_PRECO_HISTORICO: row[colMap.MAIOR_PRECO_HISTORICO],
+        PRECO_MEDIO_HISTORICO: row[colMap.PRECO_MEDIO_HISTORICO],
+        ULTIMA_COTACAO:        row[colMap.ULTIMA_COTACAO],
+        ECONOMIA_POTENCIAL:    row[colMap.ECONOMIA_POTENCIAL],
+        STATUS_PRECO:          String(row[colMap.STATUS_PRECO] || '').trim(),
+      })).filter(r => r.SUBSTANCIA);
+
+      // Histórico de compras e cotações (sob demanda, só usado no gráfico de evolução)
+      const histSheetName = findSheet(wb, ['HISTORICO_COMPRA','COMPRAS']);
+      const cotSheetName = findSheet(wb, ['COTAÇÕES','COTACOES']);
+      const historicoCompras = histSheetName
+        ? XLSX.utils.sheet_to_json(wb.Sheets[histSheetName], { defval: '' })
+            .map(r => ({ ID_ITEM: String(r.ID_ITEM ?? '').trim(), DATA: r.DATA, VALOR: r.VALOR }))
+            .filter(r => r.ID_ITEM)
+        : [];
+      const historicoCotacoes = cotSheetName
+        ? XLSX.utils.sheet_to_json(wb.Sheets[cotSheetName], { defval: '' })
+            .map(r => ({ ID_ITEM: String(r.ID_ITEM ?? '').trim(), DATA: r.DATA, VALOR_COTADO: r.VALOR_COTADO }))
+            .filter(r => r.ID_ITEM)
+        : [];
+
+      loadData(records, file.name, sheetName, historicoCompras, historicoCotacoes);
+    } catch(err) { showToast('❌ Erro: ' + err.message, 'error'); }
+  };
+  reader.readAsArrayBuffer(file);
+}
+
+function loadData(records, fileName, sheetName, histCompras, histCotacoes) {
+  allRecords = records;
+  substanceMap = {};
+  itemsById = {};
+  records.forEach(r => {
+    if (!substanceMap[r.SUBSTANCIA]) substanceMap[r.SUBSTANCIA] = [];
+    substanceMap[r.SUBSTANCIA].push(r);
+    if (r.ID_ITEM) itemsById[r.ID_ITEM] = r;
+  });
+  allSubstances = Object.keys(substanceMap).sort();
+  allLabs = [...new Set(records.map(r => r.LABORATORIO))].filter(Boolean).sort();
+  historicoCompras = histCompras || [];
+  historicoCotacoes = histCotacoes || [];
+
+  // Recalcula Melhor Cotação Atual, Economia Potencial, STATUS_PRECO e o
+  // semáforo de compra para todos os itens (corrige os bugs da planilha).
+  computeComprasMetrics();
+
+  document.getElementById('uploadArea').style.display = 'none';
+  document.getElementById('navTabs').style.display = '';
+  document.getElementById('substanciaInput').disabled = false;
+  document.getElementById('labInput').disabled = false;
+  document.getElementById('comprasSubsInput').disabled = false;
+
+  // Reset
+  currentSubstance = null;
+  currentLab = null;
+  msState.substSubs.selected.clear();
+  msState.labLabs.selected.clear();
+  populateMsOptions('substSubs', allSubstances);
+  populateMsOptions('labLabs', allLabs);
+  populateMsOptions('eanSearch', [...new Set(records.map(r=>r.EAN1))].filter(Boolean).sort());
+  populateMsOptions('prodSearch', [...new Set(records.map(r=>r.PRODUTO))].filter(Boolean).sort());
+  populateMsOptions('apresSearch', [...new Set(records.map(r=>r.APRESENTACAO))].filter(Boolean).sort());
+
+  // Filtros da aba Compras (principal)
+  populateMsOptions('comprasSubs', allSubstances);
+  populateMsOptions('comprasLabs', allLabs);
+  populateMsOptions('comprasProds', [...new Set(records.map(r=>r.PRODUTO))].filter(Boolean).sort());
+  populateMsOptions('comprasApres', [...new Set(records.map(r=>r.APRESENTACAO))].filter(Boolean).sort());
+  comprasStatusFilter = '';
+  document.querySelectorAll('#comprasStatusChipRow .chip').forEach(c => c.classList.toggle('active', c.dataset.status===''));
+  comprasSortKey = 'ECONOMIA_POTENCIAL';
+  comprasSortDir = -1;
+
+  switchTab('compras');
+  document.getElementById('kpiRow').style.display = 'none';
+  document.getElementById('winnerBanner').style.display = 'none';
+  document.getElementById('contentGrid').style.display = 'none';
+  document.getElementById('emptyState').style.display = 'block';
+  document.getElementById('apresSection').style.display = 'none';
+
+  document.getElementById('headerSubtitle').textContent =
+    `${fileName} · "${sheetName}" · ${records.length.toLocaleString('pt-BR')} itens · ${allSubstances.length.toLocaleString('pt-BR')} substâncias`;
+
+  // Populate comparador multi-selects
+  populateMsOptions('compSubs', allSubstances);
+  populateMsOptions('compLabs', allLabs);
+  populateMsOptions('compApres', []);
+  const apresSectionComp = document.getElementById('compApresSection');
+  if (apresSectionComp) apresSectionComp.style.display = 'none';
+
+  populateEvolucaoSearch();
+  renderExecutivo();
+  renderCompras();
+  showToast(`✅ ${records.length.toLocaleString('pt-BR')} itens carregados`, 'success');
+}
+
+['fileInputMain','fileInputHeader'].forEach(id => {
+  document.getElementById(id).addEventListener('change', e => handleFile(e.target.files[0]));
+});
+const uploadArea = document.getElementById('uploadArea');
+uploadArea.addEventListener('dragover', e => { e.preventDefault(); uploadArea.classList.add('drag'); });
+uploadArea.addEventListener('dragleave', () => uploadArea.classList.remove('drag'));
+uploadArea.addEventListener('drop', e => { e.preventDefault(); uploadArea.classList.remove('drag'); handleFile(e.dataTransfer.files[0]); });
+uploadArea.addEventListener('click', e => { if (!e.target.closest('label')) document.getElementById('fileInputMain').click(); });
+
+// ==================== TABS ====================
+function switchTab(tab) {
+  currentTab = tab;
+  document.querySelectorAll('.nav-tab').forEach(t => t.classList.toggle('active', t.dataset.tab === tab));
+  document.getElementById('tabCompras').style.display = tab === 'compras' ? '' : 'none';
+  document.getElementById('tabSubstancia').style.display = tab === 'substancia' ? '' : 'none';
+  document.getElementById('tabLaboratorio').style.display = tab === 'laboratorio' ? '' : 'none';
+  document.getElementById('tabComparador').style.display = tab === 'comparador' ? '' : 'none';
+  document.getElementById('tabExecutivo').style.display = tab === 'executivo' ? '' : 'none';
+  document.getElementById('sidebarCompras').style.display = tab === 'compras' ? '' : 'none';
+  document.getElementById('sidebarSubstancia').style.display = tab === 'substancia' ? '' : 'none';
+  document.getElementById('sidebarLaboratorio').style.display = tab === 'laboratorio' ? '' : 'none';
+  document.getElementById('sidebarComparador').style.display = tab === 'comparador' ? '' : 'none';
+}
+
+// ==================== SIDEBAR ====================
+function toggleSidebar() {
+  document.getElementById('sidebar').classList.toggle('collapsed');
+}
+
+// ==================== SUBSTÂNCIA AUTOCOMPLETE (legacy refs kept for compat) ====================
+// Input is now part of ms-wrap; filterMs handles the dropdown.
+// selectSubstance kept for any direct calls but now delegates to msState.
+function selectSubstance(name) {
+  if (!msState.substSubs.selected.has(name)) {
+    msState.substSubs.selected.add(name);
+    renderMsOptions('substSubs', '');
+    renderMsTags('substSubs');
+  }
+  renderSubstancia();
+}
+
+// ==================== LAB AUTOCOMPLETE (legacy refs kept for compat) ====================
+function selectLab(name) {
+  if (!msState.labLabs.selected.has(name)) {
+    msState.labLabs.selected.add(name);
+    renderMsOptions('labLabs', '');
+    renderMsTags('labLabs');
+  }
+  selectLabMulti();
+}
+
+document.addEventListener('click', e => {
+  if (!e.target.closest('.ms-wrap')) {
+    document.querySelectorAll('.ms-dropdown').forEach(d => d.classList.remove('open'));
+  }
+});
+
+function anySubstanciaFilterActive() {
+  return msState.substSubs.selected.size > 0 || msState.eanSearch.selected.size > 0
+    || msState.prodSearch.selected.size > 0 || msState.apresSearch.selected.size > 0;
+}
+// ==================== CHIPS (tipo) ====================
+document.getElementById('chipRow').addEventListener('click', e => {
+  const chip = e.target.closest('.chip');
+  if (!chip) return;
+  document.querySelectorAll('#chipRow .chip').forEach(c => c.classList.remove('active'));
+  chip.classList.add('active');
+  currentTipo = chip.dataset.tipo;
+  if (anySubstanciaFilterActive()) renderSubstancia();
+});
+
+// ==================== CHIPS (status de compra) ====================
+document.getElementById('comprasStatusChipRow').addEventListener('click', e => {
+  const chip = e.target.closest('.chip');
+  if (!chip) return;
+  document.querySelectorAll('#comprasStatusChipRow .chip').forEach(c => c.classList.remove('active'));
+  chip.classList.add('active');
+  comprasStatusFilter = chip.dataset.status;
+  renderCompras();
+});
+
+// ==================== SELECT SUBSTANCE ====================
+function selectSubstance(name) {
+  if (!msState.substSubs.selected.has(name)) {
+    msState.substSubs.selected.add(name);
+    renderMsOptions('substSubs', '');
+    renderMsTags('substSubs');
+  }
+  renderSubstancia();
+}
+
+function toggleApres(name, el) {
+  if (currentApres.has(name)) { currentApres.delete(name); el.classList.remove('active'); }
+  else { currentApres.add(name); el.classList.add('active'); }
+  renderSubstancia();
+}
+
+// ==================== SORT ====================
+function sortTable(key) {
+  if (sortKey === key) sortDir *= -1; else { sortKey = key; sortDir = 1; }
+  document.querySelectorAll('thead th').forEach(th => { th.classList.remove('sorted'); if(th.querySelector('.sort-arrow')) th.querySelector('.sort-arrow').textContent = '↕'; });
+  const th = document.getElementById('th-' + key);
+  if(th) { th.classList.add('sorted'); th.querySelector('.sort-arrow').textContent = sortDir === 1 ? '↑' : '↓'; }
+  if (anySubstanciaFilterActive()) renderSubstancia();
+}
+
+// ==================== RENDER SUBSTÂNCIA ====================
+function renderSubstancia() {
+  const selSubs = [...msState.substSubs.selected];
+  const selEans = [...msState.eanSearch.selected];
+  const selProds = [...msState.prodSearch.selected];
+  const selApresBusca = [...msState.apresSearch.selected];
+  const anyFilter = selSubs.length || selEans.length || selProds.length || selApresBusca.length;
+  if (!anyFilter) {
+    document.getElementById('emptyState').style.display = 'block';
+    document.getElementById('kpiRow').style.display = 'none';
+    document.getElementById('winnerBanner').style.display = 'none';
+    document.getElementById('contentGrid').style.display = 'none';
+    document.getElementById('apresSection').style.display = 'none';
+    return;
+  }
+
+  // Aggregate rows from all selected substances (ou de toda a base, se a busca for por EAN/Produto/Apresentação)
+  let rows = selSubs.length ? selSubs.flatMap(s => substanceMap[s] || []) : allRecords;
+  if (selEans.length) rows = rows.filter(r => selEans.includes(r.EAN1));
+  if (selProds.length) rows = rows.filter(r => selProds.includes(r.PRODUTO));
+  if (selApresBusca.length) rows = rows.filter(r => selApresBusca.includes(r.APRESENTACAO));
+  let filtered = currentTipo ? rows.filter(r => r.TIPO_PRODUTO === currentTipo) : rows;
+  if (currentApres.size > 0) filtered = filtered.filter(r => currentApres.has(r.APRESENTACAO));
+
+  // Rebuild apresentação chips from aggregated rows
+  const apresSet = [...new Set(rows.map(r => r.APRESENTACAO).filter(Boolean))].sort();
+  const apresFilter = document.getElementById('apresFilter');
+  const apresSection = document.getElementById('apresSection');
+  if (apresSet.length > 1) {
+    apresFilter.innerHTML = apresSet.map(a =>
+      `<div class="apres-chip${currentApres.has(a)?' active':''}" data-apres="${a}" onclick="toggleApres('${a.replace(/'/g,"\\'")}',this)">${a}</div>`
+    ).join('');
+    apresSection.style.display = '';
+  } else {
+    currentApres.clear();
+    apresSection.style.display = 'none';
+  }
+
+  document.getElementById('emptyState').style.display = 'none';
+  document.getElementById('kpiRow').style.display = '';
+  document.getElementById('contentGrid').style.display = '';
+
+  const sorted = [...filtered].sort((a,b) => {
+    if (sortKey === 'PRECO' || sortKey === 'ULTIMO_PRECO_PAGO') return ((formatPrice(a[sortKey])??Infinity) - (formatPrice(b[sortKey])??Infinity)) * sortDir;
+    return String(a[sortKey]).localeCompare(String(b[sortKey]), 'pt-BR') * sortDir;
+  });
+
+  const priced = filtered.filter(r => formatPrice(r.PRECO) !== null);
+  const prices = priced.map(r => formatPrice(r.PRECO));
+  const minPrice = prices.length ? Math.min(...prices) : null;
+  const maxPrice = prices.length ? Math.max(...prices) : null;
+  const avgPrice = prices.length ? prices.reduce((a,b)=>a+b,0)/prices.length : null;
+  const diffPct  = (minPrice !== null && maxPrice !== null && minPrice > 0) ? ((maxPrice-minPrice)/minPrice*100) : null;
+
+  document.getElementById('kpiTotal').textContent = filtered.length;
+  document.getElementById('kpiSubTotal').textContent = selSubs.length > 1
+    ? `${selSubs.length} substâncias · ${rows.length} no total`
+    : rows.length + ' no total';
+  document.getElementById('kpiLabs').textContent = new Set(filtered.map(r=>r.LABORATORIO)).size;
+  document.getElementById('kpiMin').textContent = minPrice !== null ? fmtBRL(minPrice) : '—';
+  document.getElementById('kpiMax').textContent = maxPrice !== null ? fmtBRL(maxPrice) : '—';
+  document.getElementById('kpiAvg').textContent = avgPrice !== null ? fmtBRL(avgPrice) : '—';
+  document.getElementById('kpiDiff').textContent = diffPct !== null ? diffPct.toFixed(1) + '%' : '—';
+  if (minPrice !== null) {
+    document.getElementById('kpiMinSub').textContent = (priced.find(r=>formatPrice(r.PRECO)===minPrice)||{}).LABORATORIO||'';
+    document.getElementById('kpiMaxSub').textContent = (priced.find(r=>formatPrice(r.PRECO)===maxPrice)||{}).LABORATORIO||'';
+  }
+
+  const banner = document.getElementById('winnerBanner');
+  if (minPrice !== null) {
+    const winner = priced.find(r=>formatPrice(r.PRECO)===minPrice);
+    banner.style.display = 'flex';
+    document.getElementById('winnerName').textContent = winner.LABORATORIO;
+    document.getElementById('winnerDetail').textContent = winner.PRODUTO + ' · ' + winner.APRESENTACAO + ' · ' + winner.TIPO_PRODUTO;
+    document.getElementById('winnerPrice').textContent = fmtBRL(minPrice);
+  } else { banner.style.display = 'none'; }
+
+  // Show SUBSTANCIA column in table when multiple substances selected (ou resultado abrange várias substâncias)
+  const multiSub = selSubs.length > 1 || (!selSubs.length && new Set(filtered.map(r=>r.SUBSTANCIA)).size > 1);
+  document.querySelectorAll('.col-substancia-header').forEach(el => el.style.display = multiSub ? '' : 'none');
+
+  document.getElementById('tableCount').textContent = sorted.length + ' itens';
+  document.getElementById('tableBody').innerHTML = sorted.map(r => {
+    const p = formatPrice(r.PRECO);
+    const isCheapest = p !== null && p === minPrice;
+    const isPriciest = p !== null && p === maxPrice && maxPrice !== minPrice;
+    const tipoClass = ['GENÉRICO','GENERICO','SIMILAR','NOVO','BIOLÓGICO','BIOLOGICO'].includes(r.TIPO_PRODUTO) ? 'tipo-'+r.TIPO_PRODUTO : 'tipo-default';
+    const priceCell = p === null
+      ? `<span class="td-price" style="color:var(--muted);font-style:italic;font-size:11px;font-weight:400">sem preço</span>`
+      : `<span class="td-price ${isCheapest?'price-min':isPriciest?'price-max':''}">${fmtBRL(p)}${isCheapest?'<span class="price-star">★</span>':''}</span>`;
+    const subCell = multiSub ? `<td style="font-size:11px;color:var(--muted);max-width:140px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${r.SUBSTANCIA}</td>` : '';
+    const compraInfo = getPurchaseInfo(r);
+    return `<tr class="${isCheapest?'cheapest':isPriciest?'priciest':''}">
+      ${subCell}
+      <td><div class="td-lab">${r.LABORATORIO}</div></td>
+      <td><div class="td-produto">${r.PRODUTO}</div></td>
+      <td><div class="td-apres">${r.APRESENTACAO}</div></td>
+      <td><span class="badge-tipo ${tipoClass}">${r.TIPO_PRODUTO||'—'}</span></td>
+      <td>${priceCell}</td>
+      <td>${compraInfo.html}</td>
+    </tr>`;
+  }).join('');
+
+  // Update thead to show/hide Substância column
+  const thead = document.getElementById('tableBody').closest('table').querySelector('thead tr');
+  if (thead) {
+    const existing = thead.querySelector('.col-substancia-header');
+    if (multiSub && !existing) {
+      thead.insertAdjacentHTML('afterbegin', '<th class="col-substancia-header">Substância</th>');
+    } else if (!multiSub && existing) {
+      existing.remove();
+    }
+  }
+
+  renderSubstanciaChart(sorted, minPrice);
+}
+
+function renderSubstanciaChart(rows, minPrice) {
+  const labMap = {};
+  rows.forEach(r => {
+    const p = formatPrice(r.PRECO);
+    if (p === null) return;
+    if (!labMap[r.LABORATORIO] || p > labMap[r.LABORATORIO]) labMap[r.LABORATORIO] = p;
+  });
+  const grouped = Object.entries(labMap).sort((a,b)=>b[1]-a[1]).slice(0,25);
+  document.getElementById('chartCount').textContent = Object.keys(labMap).length > 25 ? 'top 25 · preço máximo' : 'preço máximo por laboratório';
+  if (chartInstance) chartInstance.destroy();
+  const canvas = document.getElementById('barChart');
+  canvas.style.height = Math.max(180, grouped.length*36+60)+'px';
+  const minOfMax = grouped.length ? Math.min(...grouped.map(([,v])=>v)) : null;
+  chartInstance = new Chart(canvas.getContext('2d'), {
+    type: 'bar',
+    data: {
+      labels: grouped.map(([lab])=>lab.length>26?lab.slice(0,26)+'…':lab),
+      datasets: [{ label: 'Preço máx (R$)', data: grouped.map(([,v])=>v),
+        backgroundColor: grouped.map(([,v])=>v===minOfMax?'rgba(0,201,167,0.85)':'rgba(123,97,255,0.55)'),
+        borderColor: grouped.map(([,v])=>v===minOfMax?'#00c9a7':'#7b61ff'),
+        borderWidth:1.5, borderRadius:4 }]
+    },
+    options: { indexAxis:'y', responsive:true, maintainAspectRatio:false,
+      plugins:{ legend:{display:false}, tooltip:{callbacks:{label:ctx=>' '+fmtBRL(ctx.parsed.x)}} },
+      scales:{ x:{grid:{color:'rgba(42,51,68,0.6)'}, ticks:{color:'#8b949e',font:{size:10},callback:v=>'R$ '+v.toLocaleString('pt-BR')}},
+               y:{grid:{display:false},ticks:{color:'#e6edf3',font:{size:10}}} }
+    }
+  });
+}
+
+// ==================== CLEAR FILTERS ====================
+function clearFilters() {
+  msState.substSubs.selected.clear();
+  currentTipo = '';
+  currentApres = new Set();
+  document.querySelectorAll('#chipRow .chip').forEach(c => c.classList.toggle('active', c.dataset.tipo===''));
+  document.getElementById('apresFilter').innerHTML = '';
+  document.getElementById('apresSection').style.display = 'none';
+  renderMsOptions('substSubs', '');
+  renderMsTags('substSubs');
+  document.getElementById('kpiRow').style.display = 'none';
+  document.getElementById('winnerBanner').style.display = 'none';
+  document.getElementById('contentGrid').style.display = 'none';
+  document.getElementById('emptyState').style.display = 'block';
+}
+
+// ==================== SELECT LAB (multi) ====================
+function selectLab(name) {
+  if (!msState.labLabs.selected.has(name)) {
+    msState.labLabs.selected.add(name);
+    renderMsOptions('labLabs', '');
+    renderMsTags('labLabs');
+  }
+  selectLabMulti();
+}
+
+function selectLabMulti() {
+  const selLabs = [...msState.labLabs.selected];
+  if (!selLabs.length) {
+    document.getElementById('emptyStateLab').style.display = '';
+    document.getElementById('labContent').style.display = 'none';
+    return;
+  }
+  currentLab = selLabs.length === 1 ? selLabs[0] : null; // keep compat
+  const rows = allRecords.filter(r => selLabs.includes(r.LABORATORIO));
+  labTableData = rows;
+  const priced = rows.filter(r=>formatPrice(r.PRECO)!==null);
+  const prices = priced.map(r=>formatPrice(r.PRECO));
+  const minP = prices.length ? Math.min(...prices) : null;
+  const maxP = prices.length ? Math.max(...prices) : null;
+  const avgP = prices.length ? prices.reduce((a,b)=>a+b,0)/prices.length : null;
+  const subs = new Set(rows.map(r=>r.SUBSTANCIA));
+
+  document.getElementById('emptyStateLab').style.display = 'none';
+  document.getElementById('labContent').style.display = '';
+  document.getElementById('labKpiTotal').textContent = rows.length;
+  document.getElementById('labKpiSubs').textContent = subs.size;
+  document.getElementById('labKpiMin').textContent = minP !== null ? fmtBRL(minP) : '—';
+  document.getElementById('labKpiMax').textContent = maxP !== null ? fmtBRL(maxP) : '—';
+  document.getElementById('labKpiAvg').textContent = avgP !== null ? fmtBRL(avgP) : '—';
+
+  // Show lab column in table when multiple labs selected
+  const multiLab = selLabs.length > 1;
+  const labColHeader = document.getElementById('labColLab');
+  if (labColHeader) labColHeader.style.display = multiLab ? '' : 'none';
+
+  renderLabTable(rows, multiLab);
+
+  // Chart: top substâncias by count
+  const subCount = {};
+  rows.forEach(r => { subCount[r.SUBSTANCIA] = (subCount[r.SUBSTANCIA]||0)+1; });
+  const top = Object.entries(subCount).sort((a,b)=>b[1]-a[1]).slice(0,15);
+  if (labChartInstance) labChartInstance.destroy();
+  const canvas = document.getElementById('labChart');
+  canvas.style.height = Math.max(180, top.length*30+60)+'px';
+  labChartInstance = new Chart(canvas.getContext('2d'), {
+    type:'bar',
+    data: { labels: top.map(([s])=>s.length>30?s.slice(0,30)+'…':s), datasets:[{
+      label:'Produtos', data:top.map(([,n])=>n),
+      backgroundColor:'rgba(123,97,255,0.6)', borderColor:'#7b61ff', borderWidth:1.5, borderRadius:4
+    }]},
+    options: { indexAxis:'y', responsive:true, maintainAspectRatio:false,
+      plugins:{legend:{display:false}},
+      scales:{ x:{grid:{color:'rgba(42,51,68,0.6)'},ticks:{color:'#8b949e',font:{size:10},stepSize:1}},
+               y:{grid:{display:false},ticks:{color:'#e6edf3',font:{size:10}}} }
+    }
+  });
+}
+
+function clearLabFilters() {
+  msState.labLabs.selected.clear();
+  renderMsOptions('labLabs', '');
+  renderMsTags('labLabs');
+  labTableData = [];
+  currentLab = null;
+  document.getElementById('emptyStateLab').style.display = '';
+  document.getElementById('labContent').style.display = 'none';
+  document.getElementById('labTableSearch').value = '';
+}
+
+function renderLabTable(rows, multiLab) {
+  document.getElementById('labTableCount').textContent = rows.length + ' itens';
+  const sorted = [...rows].sort((a,b)=>String(a.SUBSTANCIA).localeCompare(String(b.SUBSTANCIA),'pt-BR'));
+  document.getElementById('labTableBody').innerHTML = sorted.map(r => {
+    const p = formatPrice(r.PRECO);
+    const tipoClass = ['GENÉRICO','GENERICO','SIMILAR','NOVO','BIOLÓGICO','BIOLOGICO'].includes(r.TIPO_PRODUTO)?'tipo-'+r.TIPO_PRODUTO:'tipo-default';
+    const labCell = multiLab ? `<td style="font-weight:600;font-size:12px;max-width:140px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${r.LABORATORIO}</td>` : '';
+    const compraInfo = getPurchaseInfo(r);
+    return `<tr>
+      ${labCell}
+      <td style="max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:12px">${r.SUBSTANCIA}</td>
+      <td class="td-produto">${r.PRODUTO}</td>
+      <td class="td-apres">${r.APRESENTACAO}</td>
+      <td><span class="badge-tipo ${tipoClass}">${r.TIPO_PRODUTO||'—'}</span></td>
+      <td style="font-size:11px;color:var(--muted)">${r.REGIME_PRECO||'—'}</td>
+      <td class="td-price" style="text-align:right">${p!==null?fmtBRL(p):'—'}</td>
+      <td>${compraInfo.html}</td>
+    </tr>`;
+  }).join('');
+}
+
+function filterLabTable(q) {
+  const selLabs = [...msState.labLabs.selected];
+  if (!selLabs.length) return;
+  const multiLab = selLabs.length > 1;
+  const filtered = q ? labTableData.filter(r =>
+    r.SUBSTANCIA.toLowerCase().includes(q.toLowerCase()) ||
+    r.PRODUTO.toLowerCase().includes(q.toLowerCase()) ||
+    r.APRESENTACAO.toLowerCase().includes(q.toLowerCase()) ||
+    r.LABORATORIO.toLowerCase().includes(q.toLowerCase())
+  ) : labTableData;
+  renderLabTable(filtered, multiLab);
+}
+
+// ==================== MULTI SELECT ====================
+const msState = {
+  substSubs: { all: [], selected: new Set() },
+  labLabs:   { all: [], selected: new Set() },
+  compSubs: { all: [], selected: new Set() },
+  compLabs: { all: [], selected: new Set() },
+  compApres: { all: [], selected: new Set() },
+  eanSearch:   { all: [], selected: new Set() },
+  prodSearch:  { all: [], selected: new Set() },
+  apresSearch: { all: [], selected: new Set() },
+  comprasSubs:  { all: [], selected: new Set() },
+  comprasLabs:  { all: [], selected: new Set() },
+  comprasProds: { all: [], selected: new Set() },
+  comprasApres: { all: [], selected: new Set() },
+};
+// Callback disparado após mudar a seleção de um ms id (lookup em vez de if/else
+// repetido — novos campos de busca passam a exigir só 1 linha aqui)
+const msOnChange = {
+  substSubs:   () => renderSubstancia(),
+  eanSearch:   () => renderSubstancia(),
+  prodSearch:  () => renderSubstancia(),
+  apresSearch: () => renderSubstancia(),
+  labLabs:     () => selectLabMulti(),
+  comprasSubs:  () => renderCompras(),
+  comprasLabs:  () => renderCompras(),
+  comprasProds: () => renderCompras(),
+  comprasApres: () => renderCompras(),
+};
+
+function populateMsOptions(id, items) {
+  msState[id].all = items;
+  msState[id].selected = new Set();
+  renderMsOptions(id, '');
+}
+
+// Cross-filter: called after any comp selection changes
+function updateCompCrossFilters(changedId) {
+  const selLabs = [...msState.compLabs.selected];
+  const selSubs = [...msState.compSubs.selected];
+
+  // Determine available substâncias based on selected labs
+  if (selLabs.length > 0) {
+    const availSubs = allSubstances.filter(s =>
+      selLabs.some(l => (substanceMap[s]||[]).some(r => r.LABORATORIO === l))
+    );
+    msState.compSubs.all = availSubs;
+    // Remove selected subs that are no longer available
+    [...msState.compSubs.selected].forEach(s => { if (!availSubs.includes(s)) msState.compSubs.selected.delete(s); });
+    const countEl = document.getElementById('compSubsAvailCount');
+    if (countEl) countEl.textContent = `(${availSubs.length} disponíveis)`;
+  } else {
+    msState.compSubs.all = allSubstances;
+    const countEl = document.getElementById('compSubsAvailCount');
+    if (countEl) countEl.textContent = '';
+  }
+
+  // Determine available labs based on selected subs
+  if (selSubs.length > 0) {
+    const availLabs = allLabs.filter(l =>
+      selSubs.some(s => (substanceMap[s]||[]).some(r => r.LABORATORIO === l))
+    );
+    msState.compLabs.all = availLabs;
+    [...msState.compLabs.selected].forEach(l => { if (!availLabs.includes(l)) msState.compLabs.selected.delete(l); });
+    const countEl = document.getElementById('compLabsAvailCount');
+    if (countEl) countEl.textContent = `(${availLabs.length} disponíveis)`;
+  } else {
+    msState.compLabs.all = allLabs;
+    const countEl = document.getElementById('compLabsAvailCount');
+    if (countEl) countEl.textContent = '';
+  }
+
+  // Determine available apresentações based on selected labs + subs
+  const activeSubs = selSubs.length ? selSubs : msState.compSubs.all;
+  const activeLabs = selLabs.length ? selLabs : msState.compLabs.all;
+  const availApres = [...new Set(
+    allRecords
+      .filter(r => activeSubs.includes(r.SUBSTANCIA) && activeLabs.includes(r.LABORATORIO) && r.APRESENTACAO)
+      .map(r => r.APRESENTACAO)
+  )].sort();
+  msState.compApres.all = availApres;
+  [...msState.compApres.selected].forEach(a => { if (!availApres.includes(a)) msState.compApres.selected.delete(a); });
+  const apresSection = document.getElementById('compApresSection');
+  if (apresSection) apresSection.style.display = availApres.length > 1 ? '' : 'none';
+  const apresCount = document.getElementById('compApresAvailCount');
+  if (apresCount) apresCount.textContent = availApres.length > 1 ? `(${availApres.length})` : '';
+
+  // Re-render dropdowns
+  const qSubs = document.getElementById('compSubsInput')?.value || '';
+  const qLabs = document.getElementById('compLabsInput')?.value || '';
+  const qApres = document.getElementById('compApresInput')?.value || '';
+  renderMsOptions('compSubs', qSubs);
+  renderMsOptions('compLabs', qLabs);
+  renderMsOptions('compApres', qApres);
+  renderMsTags('compSubs');
+  renderMsTags('compLabs');
+  renderMsTags('compApres');
+}
+
+function renderMsOptions(id, q) {
+  const { all, selected } = msState[id];
+  const filtered = q ? all.filter(i=>i.toLowerCase().includes(q.toLowerCase())) : all;
+  const container = document.getElementById(id+'Options');
+  if (!filtered.length) { container.innerHTML = `<div class="ms-empty">Nenhum resultado</div>`; return; }
+  container.innerHTML = filtered.slice(0,200).map(item => {
+    const sel = selected.has(item);
+    return `<div class="ms-option ${sel?'selected':''}" data-val="${item.replace(/"/g,'&quot;')}" onclick="toggleMsItem('${id}','${item.replace(/'/g,"\\'")}')">
+      <div class="ms-check">${sel?'✓':''}</div>
+      <span>${item.length>40?item.slice(0,40)+'…':item}</span>
+    </div>`;
+  }).join('');
+}
+
+function toggleMs(id) {
+  const drop = document.getElementById(id+'Dropdown');
+  drop.classList.toggle('open');
+  if (drop.classList.contains('open')) document.getElementById(id+'Input')?.focus();
+}
+
+function filterMs(id, q) {
+  renderMsOptions(id, q);
+  document.getElementById(id+'Dropdown').classList.add('open');
+}
+
+function toggleMsItem(id, val) {
+  const s = msState[id].selected;
+  if (s.has(val)) s.delete(val); else s.add(val);
+  const q = document.getElementById(id+'Input')?.value || '';
+  if (id === 'compSubs' || id === 'compLabs' || id === 'compApres') {
+    updateCompCrossFilters(id);
+  } else if (msOnChange[id]) {
+    renderMsOptions(id, q);
+    renderMsTags(id);
+    msOnChange[id]();
+  } else {
+    renderMsOptions(id, q);
+    renderMsTags(id);
+  }
+}
+
+function renderMsTags(id) {
+  const box = document.getElementById(id+'Box');
+  const placeholder = document.getElementById(id+'Placeholder');
+  const input = document.getElementById(id+'Input');
+  const s = msState[id].selected;
+  // Remove old tags
+  box.querySelectorAll('.ms-tag').forEach(t=>t.remove());
+  if (s.size === 0) { placeholder.style.display=''; }
+  else {
+    placeholder.style.display='none';
+    const tags = [...s].slice(0,4).map(val =>
+      `<div class="ms-tag"><span>${val.length>18?val.slice(0,18)+'…':val}</span><span class="ms-tag-remove" onclick="event.stopPropagation();toggleMsItem('${id}','${val.replace(/'/g,"\\'")}')">×</span></div>`
+    ).join('');
+    const extra = s.size > 4 ? `<div class="ms-tag"><span>+${s.size-4} mais</span></div>` : '';
+    box.insertAdjacentHTML('afterbegin', tags + extra);
+  }
+}
+
+function selectAllMs(id) {
+  const { all, selected } = msState[id];
+  all.forEach(i => selected.add(i));
+  if (id === 'compSubs' || id === 'compLabs' || id === 'compApres') {
+    updateCompCrossFilters(id);
+  } else if (msOnChange[id]) {
+    renderMsOptions(id, document.getElementById(id+'Input')?.value || '');
+    renderMsTags(id);
+    msOnChange[id]();
+  } else {
+    renderMsOptions(id, document.getElementById(id+'Input').value);
+    renderMsTags(id);
+  }
+}
+function clearMs(id) {
+  msState[id].selected.clear();
+  if (id === 'compSubs' || id === 'compLabs' || id === 'compApres') {
+    updateCompCrossFilters(id);
+  } else if (msOnChange[id]) {
+    renderMsOptions(id, '');
+    renderMsTags(id);
+    msOnChange[id]();
+  } else {
+    renderMsOptions(id, '');
+    renderMsTags(id);
+  }
+}
+
+// ==================== COMPRAS ====================
+function getComprasFiltered() {
+  const selSubs  = [...msState.comprasSubs.selected];
+  const selLabs  = [...msState.comprasLabs.selected];
+  const selProds = [...msState.comprasProds.selected];
+  const selApres = [...msState.comprasApres.selected];
+  let rows = allRecords;
+  if (selSubs.length)  rows = rows.filter(r => selSubs.includes(r.SUBSTANCIA));
+  if (selLabs.length)  rows = rows.filter(r => selLabs.includes(r.LABORATORIO));
+  if (selProds.length) rows = rows.filter(r => selProds.includes(r.PRODUTO));
+  if (selApres.length) rows = rows.filter(r => selApres.includes(r.APRESENTACAO));
+  if (comprasStatusFilter) rows = rows.filter(r => r._statusCompra === comprasStatusFilter);
+  return rows;
+}
+
+function renderCompras() {
+  if (!allRecords.length) return;
+  const rows = getComprasFiltered();
+  renderComprasAlertas(rows);
+  renderMelhorOportunidade(rows);
+  renderComprasTabela(rows);
+  renderRankingEconomia(rows);
+  renderPrioridadeNegociacao(rows);
+}
+
+function renderComprasAlertas(rows) {
+  let economiaTotal = 0, aumento = 0, reducao = 0, semCotacao = 0, oportunidades = 0;
+  rows.forEach(r => {
+    economiaTotal += r.ECONOMIA_POTENCIAL || 0;
+    if (r.STATUS_PRECO === 'Aumento') aumento++;
+    else if (r.STATUS_PRECO === 'Redução') reducao++;
+    else if (r.STATUS_PRECO === 'Sem cotação') semCotacao++;
+    if (r.ECONOMIA_POTENCIAL > 0) oportunidades++;
+  });
+  document.getElementById('comprasAlertTotal').textContent = rows.length.toLocaleString('pt-BR');
+  document.getElementById('comprasAlertEconomia').textContent = fmtBRL(economiaTotal);
+  document.getElementById('comprasAlertOportunidades').textContent = oportunidades.toLocaleString('pt-BR');
+  document.getElementById('comprasAlertAumento').textContent = aumento.toLocaleString('pt-BR');
+  document.getElementById('comprasAlertReducao').textContent = reducao.toLocaleString('pt-BR');
+  document.getElementById('comprasAlertSemCotacao').textContent = semCotacao.toLocaleString('pt-BR');
+}
+
+function renderMelhorOportunidade(rows) {
+  const card = document.getElementById('oppCard');
+  const empty = document.getElementById('oppEmpty');
+  const valid = rows.filter(r => r.ECONOMIA_POTENCIAL > 0);
+  if (!valid.length) { card.style.display = 'none'; empty.style.display = ''; return; }
+  let best = valid[0];
+  valid.forEach(r => { if (r.ECONOMIA_POTENCIAL > best.ECONOMIA_POTENCIAL) best = r; });
+  empty.style.display = 'none';
+  card.style.display = 'flex';
+  document.getElementById('oppProduto').textContent = best.PRODUTO;
+  document.getElementById('oppDetalhe').textContent = `${best.SUBSTANCIA} · ${best.APRESENTACAO}`;
+  const labTxt = (best._melhorLab === best.LABORATORIO && (!best._melhorProduto || best._melhorProduto === best.PRODUTO))
+    ? `${best.LABORATORIO} — preço caiu no próprio fornecedor`
+    : `${best._melhorProduto || '—'} — ${best._melhorLab || '—'}`;
+  document.getElementById('oppLab').textContent = labTxt;
+  document.getElementById('oppUltimo').textContent = fmtBRL(best._ultimoPago);
+  document.getElementById('oppMelhor').textContent = fmtBRL(best._melhorCotacao);
+  document.getElementById('oppEconomiaRS').textContent = fmtBRL(best.ECONOMIA_POTENCIAL);
+  document.getElementById('oppEconomiaPct').textContent = (best._diffPct !== null ? best._diffPct.toFixed(1) : '0.0') + '%';
+}
+
+function sortCompras(key) {
+  const numericKeys = ['_ultimoPago','_melhorCotacao','ECONOMIA_POTENCIAL','_diffPct','_diffVsUltimoComprador'];
+  if (comprasSortKey === key) {
+    comprasSortDir *= -1;
+  } else {
+    comprasSortKey = key;
+    comprasSortDir = numericKeys.includes(key) ? -1 : 1;
+  }
+  document.querySelectorAll('#tabCompras thead th').forEach(th => {
+    th.classList.remove('sorted');
+    const a = th.querySelector('.sort-arrow');
+    if (a) a.textContent = '↕';
+  });
+  const th = document.getElementById('thc-' + key);
+  if (th) {
+    th.classList.add('sorted');
+    const a = th.querySelector('.sort-arrow');
+    if (a) a.textContent = comprasSortDir === 1 ? '↑' : '↓';
+  }
+  renderComprasTabela(getComprasFiltered());
+}
+
+function renderComprasTabela(rows) {
+  const numericKeys = ['_ultimoPago','_melhorCotacao','ECONOMIA_POTENCIAL','_diffPct','_diffVsUltimoComprador'];
+  const sorted = [...rows].sort((a,b) => {
+    const av = a[comprasSortKey], bv = b[comprasSortKey];
+    if (numericKeys.includes(comprasSortKey)) {
+      const an = (av === null || av === undefined) ? -Infinity : av;
+      const bn = (bv === null || bv === undefined) ? -Infinity : bv;
+      return (an - bn) * comprasSortDir;
+    }
+    return String(av||'').localeCompare(String(bv||''), 'pt-BR') * comprasSortDir;
+  });
+  document.getElementById('comprasTableCount').textContent = sorted.length.toLocaleString('pt-BR') + ' itens';
+  const LIMIT = 400;
+  const body = document.getElementById('comprasTableBody');
+  if (!sorted.length) {
+    body.innerHTML = `<tr><td colspan="12" style="text-align:center;color:var(--muted);padding:24px">Nenhum item encontrado para os filtros selecionados.</td></tr>`;
+    return;
+  }
+  body.innerHTML = sorted.slice(0, LIMIT).map(r => `
+    <tr>
+      <td style="font-size:12px;max-width:170px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${r.SUBSTANCIA}</td>
+      <td class="td-produto">${r.PRODUTO}</td>
+      <td class="td-apres">${r.APRESENTACAO}</td>
+      <td style="font-size:12px;max-width:150px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${r.LABORATORIO}</td>
+      <td class="td-price">${r._ultimoPago!==null?fmtBRL(r._ultimoPago):'—'}</td>
+      <td class="td-price">${r._melhorCotacao!==null?fmtBRL(r._melhorCotacao):'—'}</td>
+      <td class="td-price ${r.ECONOMIA_POTENCIAL>0?'price-min':''}" style="text-align:right">${fmtBRL(r.ECONOMIA_POTENCIAL||0)}</td>
+      <td style="text-align:right">${r._diffPct!==null?r._diffPct.toFixed(1)+'%':'—'}</td>
+      <td>${statusCompraBadge(r._statusCompra)}</td>
+      <td style="font-size:11px;color:var(--muted);max-width:230px">${getRecomendacao(r)}</td>
+      <td>${ultimoCompradorCell(r)}</td>
+      <td style="text-align:right">${diffVsUltimoCompradorCell(r)}</td>
+    </tr>`).join('');
+  if (sorted.length > LIMIT) showToast(`ℹ️ Exibindo os ${LIMIT} primeiros itens de ${sorted.length} — use os filtros ou exporte para ver todos`);
+}
+
+function renderRankingEconomia(rows) {
+  const top = rows.filter(r => r.ECONOMIA_POTENCIAL > 0)
+    .sort((a,b) => b.ECONOMIA_POTENCIAL - a.ECONOMIA_POTENCIAL)
+    .slice(0, 30);
+  document.getElementById('rankingEconomiaCount').textContent = top.length.toLocaleString('pt-BR') + ' itens';
+  const body = document.getElementById('rankingEconomiaBody');
+  if (!top.length) {
+    body.innerHTML = `<tr><td colspan="7" style="text-align:center;color:var(--muted);padding:24px">Nenhuma oportunidade de economia encontrada nos filtros atuais.</td></tr>`;
+    return;
+  }
+  body.innerHTML = top.map((r,i) => {
+    const rankCls = i===0?'gold':i===1?'silver':i===2?'bronze':'';
+    return `<tr>
+      <td class="rank-num ${rankCls}">${i+1}</td>
+      <td class="td-produto">${r.PRODUTO}</td>
+      <td style="font-size:12px;max-width:150px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${r.LABORATORIO}</td>
+      <td class="td-price">${fmtBRL(r._ultimoPago)}</td>
+      <td class="td-price price-min">${fmtBRL(r._melhorCotacao)}</td>
+      <td class="td-price price-min" style="text-align:right">${fmtBRL(r.ECONOMIA_POTENCIAL)}</td>
+      <td style="text-align:right"><span class="diff-badge green">${r._diffPct.toFixed(1)}%</span></td>
+    </tr>`;
+  }).join('');
+}
+
+function renderPrioridadeNegociacao(rows) {
+  const list = rows.filter(r => r._prioridade !== '-')
+    .sort((a,b) => b.ECONOMIA_POTENCIAL - a.ECONOMIA_POTENCIAL)
+    .slice(0, 50);
+  document.getElementById('prioridadeCount').textContent = list.length.toLocaleString('pt-BR') + ' itens';
+  const body = document.getElementById('prioridadeBody');
+  if (!list.length) {
+    body.innerHTML = `<tr><td colspan="5" style="text-align:center;color:var(--muted);padding:24px">Nenhum item priorizável nos filtros atuais.</td></tr>`;
+    return;
+  }
+  body.innerHTML = list.map(r => `
+    <tr>
+      <td class="td-produto">${r.PRODUTO}</td>
+      <td style="font-size:12px;max-width:150px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${r.LABORATORIO}</td>
+      <td class="td-price price-min" style="text-align:right">${fmtBRL(r.ECONOMIA_POTENCIAL)}</td>
+      <td style="text-align:right">${r._diffPct.toFixed(1)}%</td>
+      <td>${prioridadeBadge(r._prioridade)}</td>
+    </tr>`).join('');
+}
+
+function clearComprasFilters() {
+  ['comprasSubs','comprasLabs','comprasProds','comprasApres'].forEach(id => {
+    msState[id].selected.clear();
+    renderMsOptions(id, '');
+    renderMsTags(id);
+  });
+  comprasStatusFilter = '';
+  document.querySelectorAll('#comprasStatusChipRow .chip').forEach(c => c.classList.toggle('active', c.dataset.status===''));
+  renderCompras();
+}
+
+function exportarCompras() {
+  const rows = getComprasFiltered();
+  if (!rows.length) { showToast('Nenhum item para exportar', 'error'); return; }
+  const sorted = [...rows].sort((a,b) => b.ECONOMIA_POTENCIAL - a.ECONOMIA_POTENCIAL);
+  const statusLabel = { verde:'Comprar', amarelo:'Atenção', vermelho:'Não Comprar', cinza:'Sem dados' };
+  const ws = XLSX.utils.json_to_sheet(sorted.map(r => ({
+    'Substância': r.SUBSTANCIA,
+    'Produto': r.PRODUTO,
+    'Apresentação': r.APRESENTACAO,
+    'Laboratório': r.LABORATORIO,
+    'Último Preço Pago': r._ultimoPago,
+    'Melhor Cotação Atual': r._melhorCotacao,
+    'Diferença (R$)': r.ECONOMIA_POTENCIAL,
+    'Diferença (%)': r._diffPct !== null ? Number(r._diffPct.toFixed(2)) : null,
+    'Status de Compra': statusLabel[r._statusCompra] || 'Sem dados',
+    'Prioridade': r._prioridade,
+    'Recomendação': getRecomendacao(r),
+    'Último Comprador (Laboratório)': r._ultimoCompradorLab || '',
+    'Último Comprador (Produto)': r._ultimoCompradorProduto || '',
+    'Data Última Compra': r._ultimoCompradorData ? r._ultimoCompradorData.toLocaleDateString('pt-BR') : '',
+    'Preço Última Compra': r._ultimoCompradorPreco,
+    'Diferença vs Último Comprador (R$)': r._diffVsUltimoComprador,
+    'Diferença vs Último Comprador (%)': r._diffVsUltimoCompradorPct !== null ? Number(r._diffVsUltimoCompradorPct.toFixed(2)) : null,
+  })));
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, 'Compras');
+  XLSX.writeFile(wb, 'compras_oportunidades.xlsx');
+  showToast('✅ Planilha exportada com sucesso');
+}
+
+// ==================== COMPARADOR ====================
+function renderComparador() {
+  const subs = [...msState.compSubs.selected];
+  const labs = [...msState.compLabs.selected];
+  const apres = [...msState.compApres.selected];
+  if (!subs.length && !labs.length) { showToast('Selecione ao menos uma substância ou laboratório', 'error'); return; }
+
+  document.getElementById('emptyStateComp').style.display = 'none';
+  document.getElementById('comparadorContent').style.display = '';
+
+  // Build matrix: rows = substâncias, cols = laboratórios
+  const activeSubs = subs.length ? subs : allSubstances.filter(s => labs.some(l => substanceMap[s]?.some(r=>r.LABORATORIO===l)));
+  const activeLabs = labs.length ? labs : [...new Set(activeSubs.flatMap(s=>(substanceMap[s]||[]).map(r=>r.LABORATORIO)))];
+
+  // For each subs×labs: min price (filtered by apresentação if selected) + última compra (menor valor pago)
+  const matrix = {};
+  activeSubs.forEach(sub => {
+    matrix[sub] = {};
+    activeLabs.forEach(lab => {
+      let rows = (substanceMap[sub]||[]).filter(r=>r.LABORATORIO===lab);
+      if (apres.length > 0) rows = rows.filter(r => apres.includes(r.APRESENTACAO));
+      const prices = rows.map(r=>formatPrice(r.PRECO)).filter(p=>p!==null);
+      const compras = rows.map(r=>formatPrice(r.ULTIMO_PRECO_PAGO)).filter(p=>p!==null);
+      matrix[sub][lab] = {
+        preco: prices.length ? Math.min(...prices) : null,
+        ultimoCompra: compras.length ? Math.min(...compras) : null,
+      };
+    });
+  });
+
+  // Build table header
+  const thead = document.getElementById('compMatrizHead');
+  const tbody = document.getElementById('compMatrizBody');
+  const labSlice = activeLabs.slice(0,15);
+
+  thead.innerHTML = `<tr>
+    <th style="min-width:180px;text-align:left">Substância</th>
+    ${labSlice.map(l=>`<th style="min-width:110px;text-align:right">${l.length>20?l.slice(0,20)+'…':l}</th>`).join('')}
+    <th style="min-width:90px;text-align:right">Min</th>
+    <th style="min-width:90px;text-align:right">Max</th>
+    <th style="min-width:80px;text-align:right">Δ%</th>
+  </tr>`;
+
+  tbody.innerHTML = activeSubs.slice(0,50).map(sub => {
+    const rowPrices = labSlice.map(l=>matrix[sub][l].preco).filter(p=>p!==null);
+    const rowMin = rowPrices.length ? Math.min(...rowPrices) : null;
+    const rowMax = rowPrices.length ? Math.max(...rowPrices) : null;
+    const rowDiff = (rowMin!==null && rowMax!==null && rowMin>0) ? ((rowMax-rowMin)/rowMin*100) : null;
+    const rowComprasValidas = labSlice.map(l=>matrix[sub][l].ultimoCompra).filter(p=>p!==null);
+    const rowMinCompra = rowComprasValidas.length ? Math.min(...rowComprasValidas) : null;
+    const cells = labSlice.map(l => {
+      const { preco: p, ultimoCompra } = matrix[sub][l];
+      if (p===null) return `<td style="text-align:right;color:var(--muted);font-size:11px">—</td>`;
+      const isMin = p===rowMin;
+      const isMax = p===rowMax && rowMax!==rowMin;
+      const compraSub = ultimoCompra===null
+        ? `<div style="font-size:9px;color:var(--muted)">sem compra</div>`
+        : `<div style="font-size:9px;color:${ultimoCompra<=rowMinCompra+1e-9?'var(--accent)':'var(--muted)'}">últ. compra: ${fmtBRL(ultimoCompra)}${ultimoCompra<=rowMinCompra+1e-9?' ✓':''}</div>`;
+      return `<td class="td-price ${isMin?'price-min':isMax?'price-max':''}" style="text-align:right">${fmtBRL(p)}${isMin?' ★':''}${compraSub}</td>`;
+    }).join('');
+    return `<tr>
+      <td style="font-size:12px;font-weight:600;max-width:180px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${sub}</td>
+      ${cells}
+      <td class="td-price price-min" style="text-align:right">${rowMin!==null?fmtBRL(rowMin):'—'}</td>
+      <td class="td-price price-max" style="text-align:right">${rowMax!==null?fmtBRL(rowMax):'—'}</td>
+      <td style="text-align:right">${rowDiff!==null?`<span class="diff-badge ${rowDiff<50?'green':'red'}">${rowDiff.toFixed(1)}%</span>`:'—'}</td>
+    </tr>`;
+  }).join('');
+
+  // Ranking chart
+  const labAvgs = labSlice.map(lab => {
+    const vals = activeSubs.map(s=>matrix[s][lab].preco).filter(p=>p!==null);
+    return { lab, avg: vals.length ? vals.reduce((a,b)=>a+b,0)/vals.length : null };
+  }).filter(x=>x.avg!==null).sort((a,b)=>a.avg-b.avg);
+
+  if (compChartRank) compChartRank.destroy();
+  const rc = document.getElementById('compRankChart');
+  rc.style.height = Math.max(180, labAvgs.length*34+60)+'px';
+  compChartRank = new Chart(rc.getContext('2d'), {
+    type:'bar',
+    data:{ labels:labAvgs.map(x=>x.lab.length>22?x.lab.slice(0,22)+'…':x.lab),
+      datasets:[{label:'Preço médio',data:labAvgs.map(x=>x.avg),
+        backgroundColor:labAvgs.map((_,i)=>i===0?'rgba(0,201,167,0.85)':i===labAvgs.length-1?'rgba(255,77,109,0.7)':'rgba(123,97,255,0.55)'),
+        borderColor:labAvgs.map((_,i)=>i===0?'#00c9a7':i===labAvgs.length-1?'#ff4d6d':'#7b61ff'),
+        borderWidth:1.5,borderRadius:4}]
+    },
+    options:{indexAxis:'y',responsive:true,maintainAspectRatio:false,
+      plugins:{legend:{display:false},tooltip:{callbacks:{label:ctx=>' '+fmtBRL(ctx.parsed.x)}}},
+      scales:{x:{grid:{color:'rgba(42,51,68,0.6)'},ticks:{color:'#8b949e',font:{size:10},callback:v=>'R$'+v.toLocaleString('pt-BR')}},
+              y:{grid:{display:false},ticks:{color:'#e6edf3',font:{size:10}}}}
+    }
+  });
+
+  // Amplitude chart
+  const subAmpl = activeSubs.slice(0,12).map(sub => {
+    const prices = labSlice.map(l=>matrix[sub][l].preco).filter(p=>p!==null);
+    const mn = prices.length?Math.min(...prices):null;
+    const mx = prices.length?Math.max(...prices):null;
+    return { sub: sub.length>28?sub.slice(0,28)+'…':sub, diff: (mn!==null&&mx!==null&&mn>0)?((mx-mn)/mn*100):null };
+  }).filter(x=>x.diff!==null).sort((a,b)=>b.diff-a.diff);
+
+  if (compChartAmpl) compChartAmpl.destroy();
+  const ac = document.getElementById('compAmplChart');
+  ac.style.height = Math.max(180, subAmpl.length*32+60)+'px';
+  compChartAmpl = new Chart(ac.getContext('2d'), {
+    type:'bar',
+    data:{ labels:subAmpl.map(x=>x.sub),
+      datasets:[{label:'Diferença %',data:subAmpl.map(x=>x.diff),
+        backgroundColor:'rgba(255,183,3,0.6)',borderColor:'#ffb703',borderWidth:1.5,borderRadius:4}]
+    },
+    options:{indexAxis:'y',responsive:true,maintainAspectRatio:false,
+      plugins:{legend:{display:false},tooltip:{callbacks:{label:ctx=>` ${ctx.parsed.x.toFixed(1)}%`}}},
+      scales:{x:{grid:{color:'rgba(42,51,68,0.6)'},ticks:{color:'#8b949e',font:{size:10},callback:v=>v.toFixed(0)+'%'}},
+              y:{grid:{display:false},ticks:{color:'#e6edf3',font:{size:10}}}}
+    }
+  });
+
+  if (activeLabs.length > 15) showToast(`ℹ️ Mostrando os primeiros 15 laboratórios na tabela`);
+  if (activeSubs.length > 50) showToast(`ℹ️ Mostrando as primeiras 50 substâncias`);
+}
+
+function clearComparador() {
+  msState.compSubs.selected.clear();
+  msState.compLabs.selected.clear();
+  msState.compApres.selected.clear();
+  msState.compSubs.all = allSubstances;
+  msState.compLabs.all = allLabs;
+  msState.compApres.all = [];
+  renderMsOptions('compSubs', '');
+  renderMsOptions('compLabs', '');
+  renderMsOptions('compApres', '');
+  renderMsTags('compSubs');
+  renderMsTags('compLabs');
+  renderMsTags('compApres');
+  const countSubs = document.getElementById('compSubsAvailCount');
+  if (countSubs) countSubs.textContent = '';
+  const apresSection = document.getElementById('compApresSection');
+  if (apresSection) apresSection.style.display = 'none';
+  document.getElementById('emptyStateComp').style.display = '';
+  document.getElementById('comparadorContent').style.display = 'none';
+}
+
+// ==================== EXECUTIVO ====================
+function renderExecutivo() {
+  if (!allRecords.length) return;
+
+  renderComprasKPIs();
+  renderTop20ItensChart();
+  renderAcimaMenorPrecoChart();
+  renderEconomiaChart();
+  renderCompetitividadeChart();
+
+  const subs = allSubstances.length;
+  const labs = allLabs.length;
+  const prods = allRecords.length;
+  const priced = allRecords.filter(r=>formatPrice(r.PRECO)!==null);
+  const allPrices = priced.map(r=>formatPrice(r.PRECO));
+  const avgGeral = allPrices.length ? allPrices.reduce((a,b)=>a+b,0)/allPrices.length : 0;
+
+  // Lab avg prices
+  const labAvgMap = {};
+  allLabs.forEach(lab => {
+    const vals = allRecords.filter(r=>r.LABORATORIO===lab).map(r=>formatPrice(r.PRECO)).filter(p=>p!==null);
+    if (vals.length) labAvgMap[lab] = vals.reduce((a,b)=>a+b,0)/vals.length;
+  });
+  const labsSorted = Object.entries(labAvgMap).sort((a,b)=>a[1]-b[1]);
+  const cheapestLab = labsSorted[0];
+  const priciest = labsSorted[labsSorted.length-1];
+
+  // Substância with most labs
+  const subLabCount = {};
+  allSubstances.forEach(s => { subLabCount[s] = new Set((substanceMap[s]||[]).map(r=>r.LABORATORIO)).size; });
+  const mostComp = Object.entries(subLabCount).sort((a,b)=>b[1]-a[1])[0];
+
+  document.getElementById('execKpiSubs').textContent = subs.toLocaleString('pt-BR');
+  document.getElementById('execKpiLabs').textContent = labs.toLocaleString('pt-BR');
+  document.getElementById('execKpiProds').textContent = prods.toLocaleString('pt-BR');
+  document.getElementById('execKpiAvg').textContent = fmtBRL(avgGeral);
+  if (cheapestLab) { document.getElementById('execLabMin').textContent = cheapestLab[0].length>18?cheapestLab[0].slice(0,18)+'…':cheapestLab[0]; document.getElementById('execLabMinVal').textContent = fmtBRL(cheapestLab[1])+' avg'; }
+  if (priciest) { document.getElementById('execLabMax').textContent = priciest[0].length>18?priciest[0].slice(0,18)+'…':priciest[0]; document.getElementById('execLabMaxVal').textContent = fmtBRL(priciest[1])+' avg'; }
+  if (mostComp) { document.getElementById('execMostComp').textContent = mostComp[0].length>18?mostComp[0].slice(0,18)+'…':mostComp[0]; document.getElementById('execMostCompVal').textContent = mostComp[1]+' laboratórios'; }
+}
+
+// Top 20 itens (produto+lab) com maior economia potencial em R$
+function renderTop20ItensChart() {
+  const top = [...allRecords].filter(r=>r.ECONOMIA_POTENCIAL>0)
+    .sort((a,b)=>b.ECONOMIA_POTENCIAL-a.ECONOMIA_POTENCIAL).slice(0,20);
+  if (execCharts.top20itens) execCharts.top20itens.destroy();
+  const c = document.getElementById('top20ItensChart');
+  c.style.height = Math.max(220, top.length*26+60)+'px';
+  execCharts.top20itens = new Chart(c.getContext('2d'), {
+    type:'bar',
+    data:{ labels: top.map(r=>{ const l = `${r.PRODUTO} · ${r.LABORATORIO}`; return l.length>34?l.slice(0,34)+'…':l; }),
+      datasets:[{label:'Economia potencial', data: top.map(r=>r.ECONOMIA_POTENCIAL),
+        backgroundColor:'rgba(0,201,167,0.65)', borderColor:'#00c9a7', borderWidth:1.5, borderRadius:4}]
+    },
+    options:{indexAxis:'y',responsive:true,maintainAspectRatio:false,
+      plugins:{legend:{display:false},tooltip:{callbacks:{label:ctx=>' '+fmtBRL(ctx.parsed.x)}}},
+      scales:{x:{grid:{color:'rgba(42,51,68,0.6)'},ticks:{color:'#8b949e',font:{size:10},callback:v=>'R$'+v.toLocaleString('pt-BR')}},
+              y:{grid:{display:false},ticks:{color:'#e6edf3',font:{size:9}}}}
+    }
+  });
+  if (!top.length) showToast('ℹ️ Nenhum item com economia potencial encontrado na base', 'info');
+}
+
+// Economia Potencial por Laboratório (soma R$) — também identifica, em R$,
+// quais laboratórios concentram mais itens comprados acima do menor preço.
+function renderAcimaMenorPrecoChart() {
+  const sums = {};
+  allRecords.forEach(r => { if (r.ECONOMIA_POTENCIAL > 0) sums[r.LABORATORIO] = (sums[r.LABORATORIO]||0) + r.ECONOMIA_POTENCIAL; });
+  const top = Object.entries(sums).sort((a,b)=>b[1]-a[1]).slice(0,10);
+  if (execCharts.acimaMenor) execCharts.acimaMenor.destroy();
+  const c = document.getElementById('acimaMenorPrecoChart');
+  c.style.height = Math.max(220, top.length*30+60)+'px';
+  execCharts.acimaMenor = new Chart(c.getContext('2d'), {
+    type:'bar',
+    data:{ labels: top.map(([l])=>l.length>26?l.slice(0,26)+'…':l),
+      datasets:[{label:'Economia potencial (R$)', data: top.map(([,v])=>v),
+        backgroundColor:'rgba(255,77,109,0.6)', borderColor:'#ff4d6d', borderWidth:1.5, borderRadius:4}]
+    },
+    options:{indexAxis:'y',responsive:true,maintainAspectRatio:false,
+      plugins:{legend:{display:false},tooltip:{callbacks:{label:ctx=>' '+fmtBRL(ctx.parsed.x)}}},
+      scales:{x:{grid:{color:'rgba(42,51,68,0.6)'},ticks:{color:'#8b949e',font:{size:10},callback:v=>'R$'+v.toLocaleString('pt-BR')}},
+              y:{grid:{display:false},ticks:{color:'#e6edf3',font:{size:10}}}}
+    }
+  });
+}
+
+// ==================== INDICADORES DE COMPRAS (DASHBOARD_BASE) ====================
+function renderComprasKPIs() {
+  let economiaTotal = 0, semCotacao = 0, aumento = 0, reducao = 0;
+  allRecords.forEach(r => {
+    const eco = formatPrice(r.ECONOMIA_POTENCIAL);
+    if (eco !== null && eco > 0) economiaTotal += eco;
+    if (r.STATUS_PRECO === 'Aumento') aumento++;
+    else if (r.STATUS_PRECO === 'Redução') reducao++;
+    else if (r.STATUS_PRECO === 'Sem cotação' || !r.STATUS_PRECO) semCotacao++;
+  });
+  document.getElementById('kpiTotalMeds').textContent = allRecords.length.toLocaleString('pt-BR');
+  document.getElementById('kpiTotalLabsCompras').textContent = allLabs.length.toLocaleString('pt-BR');
+  document.getElementById('kpiEconomiaPotencial').textContent = fmtBRL(economiaTotal);
+  document.getElementById('kpiSemCotacao').textContent = semCotacao.toLocaleString('pt-BR');
+  document.getElementById('kpiAumento').textContent = aumento.toLocaleString('pt-BR');
+  document.getElementById('kpiReducao').textContent = reducao.toLocaleString('pt-BR');
+}
+
+function renderEconomiaChart() {
+  const bySub = {};
+  allRecords.forEach(r => {
+    const eco = formatPrice(r.ECONOMIA_POTENCIAL);
+    if (eco === null || eco <= 0) return;
+    bySub[r.SUBSTANCIA] = (bySub[r.SUBSTANCIA]||0) + eco;
+  });
+  const top = Object.entries(bySub).sort((a,b)=>b[1]-a[1]).slice(0,10);
+  if (execCharts.economia) execCharts.economia.destroy();
+  const c = document.getElementById('economiaChart');
+  c.style.height = Math.max(200, top.length*30+60)+'px';
+  execCharts.economia = new Chart(c.getContext('2d'), {
+    type:'bar',
+    data:{ labels: top.map(([s])=>s.length>28?s.slice(0,28)+'…':s),
+      datasets:[{label:'Economia potencial', data: top.map(([,v])=>v),
+        backgroundColor:'rgba(0,201,167,0.65)', borderColor:'#00c9a7', borderWidth:1.5, borderRadius:4}]
+    },
+    options:{indexAxis:'y',responsive:true,maintainAspectRatio:false,
+      plugins:{legend:{display:false},tooltip:{callbacks:{label:ctx=>' '+fmtBRL(ctx.parsed.x)}}},
+      scales:{x:{grid:{color:'rgba(42,51,68,0.6)'},ticks:{color:'#8b949e',font:{size:10},callback:v=>'R$'+v.toLocaleString('pt-BR')}},
+              y:{grid:{display:false},ticks:{color:'#e6edf3',font:{size:10}}}}
+    }
+  });
+}
+
+function renderCompetitividadeChart() {
+  // Para cada combinação Substância+Apresentação, o laboratório com menor preço "vence"
+  const groups = {};
+  allRecords.forEach(r => {
+    const p = formatPrice(r.PRECO);
+    if (p === null || !r.LABORATORIO) return;
+    const key = r.SUBSTANCIA + '|' + r.APRESENTACAO;
+    if (!groups[key] || p < groups[key].price) groups[key] = { price: p, lab: r.LABORATORIO };
+  });
+  const wins = {};
+  Object.values(groups).forEach(g => { wins[g.lab] = (wins[g.lab]||0)+1; });
+  const top = Object.entries(wins).sort((a,b)=>b[1]-a[1]).slice(0,15);
+  if (execCharts.competitividade) execCharts.competitividade.destroy();
+  const c = document.getElementById('competitividadeChart');
+  c.style.height = Math.max(200, top.length*30+60)+'px';
+  execCharts.competitividade = new Chart(c.getContext('2d'), {
+    type:'bar',
+    data:{ labels: top.map(([l])=>l.length>26?l.slice(0,26)+'…':l),
+      datasets:[{label:'Itens em que é o mais barato', data: top.map(([,v])=>v),
+        backgroundColor:'rgba(123,97,255,0.6)', borderColor:'#7b61ff', borderWidth:1.5, borderRadius:4}]
+    },
+    options:{indexAxis:'y',responsive:true,maintainAspectRatio:false,
+      plugins:{legend:{display:false}},
+      scales:{x:{grid:{color:'rgba(42,51,68,0.6)'},ticks:{color:'#8b949e',font:{size:10},stepSize:1}},
+              y:{grid:{display:false},ticks:{color:'#e6edf3',font:{size:10}}}}
+    }
+  });
+}
+
+// ==================== EVOLUÇÃO DE PREÇO POR ITEM ====================
+function populateEvolucaoSearch() {
+  evolucaoItemsList = allRecords.filter(r=>r.ID_ITEM).map(r => ({
+    id: r.ID_ITEM,
+    label: `${r.PRODUTO} · ${r.LABORATORIO} · ${r.APRESENTACAO}`
+  }));
+  evolucaoSelectedId = null;
+  const input = document.getElementById('evolucaoSearchInput');
+  const drop = document.getElementById('evolucaoDropdown');
+  if (input) input.value = '';
+  if (drop) { drop.classList.remove('open'); drop.innerHTML = ''; }
+  const empty = document.getElementById('evolucaoEmpty');
+  if (empty) { empty.style.display = ''; empty.textContent = 'Selecione um item para ver o histórico de compras e cotações.'; }
+  const wrap = document.getElementById('evolucaoChartWrap');
+  if (wrap) wrap.style.display = 'none';
+}
+
+function filterEvolucaoSearch(q) {
+  const drop = document.getElementById('evolucaoDropdown');
+  if (!q || q.length < 2) { drop.classList.remove('open'); drop.innerHTML = ''; return; }
+  const ql = q.toLowerCase();
+  const matches = evolucaoItemsList.filter(it => it.label.toLowerCase().includes(ql)).slice(0,30);
+  if (!matches.length) {
+    drop.innerHTML = `<div class="drop-item" style="color:var(--muted)">Nenhum resultado</div>`;
+  } else {
+    drop.innerHTML = matches.map(it =>
+      `<div class="drop-item" onclick="selectEvolucaoItem('${it.id}')">${(it.label.length>70?it.label.slice(0,70)+'…':it.label).replace(/</g,'&lt;')}</div>`
+    ).join('');
+  }
+  drop.classList.add('open');
+}
+
+function selectEvolucaoItem(idItem) {
+  evolucaoSelectedId = idItem;
+  const item = itemsById[idItem];
+  const input = document.getElementById('evolucaoSearchInput');
+  if (input) input.value = item ? `${item.PRODUTO} · ${item.LABORATORIO} · ${item.APRESENTACAO}` : idItem;
+  const drop = document.getElementById('evolucaoDropdown');
+  drop.classList.remove('open');
+  drop.innerHTML = '';
+  renderEvolucaoChart(idItem);
+}
+
+function renderEvolucaoChart(idItem) {
+  const compras = historicoCompras.filter(r=>r.ID_ITEM===idItem)
+    .map(r=>({x: parseSheetDate(r.DATA)?.getTime(), y: formatPrice(r.VALOR)}))
+    .filter(p=>p.x && p.y!==null).sort((a,b)=>a.x-b.x);
+  const cotacoes = historicoCotacoes.filter(r=>r.ID_ITEM===idItem)
+    .map(r=>({x: parseSheetDate(r.DATA)?.getTime(), y: formatPrice(r.VALOR_COTADO)}))
+    .filter(p=>p.x && p.y!==null).sort((a,b)=>a.x-b.x);
+
+  const empty = document.getElementById('evolucaoEmpty');
+  const wrap = document.getElementById('evolucaoChartWrap');
+  if (!compras.length && !cotacoes.length) {
+    empty.textContent = 'Nenhum histórico de compras ou cotações encontrado para este item.';
+    empty.style.display = '';
+    wrap.style.display = 'none';
+    return;
+  }
+  empty.style.display = 'none';
+  wrap.style.display = '';
+  if (evolucaoChartInstance) evolucaoChartInstance.destroy();
+  evolucaoChartInstance = new Chart(document.getElementById('evolucaoChart').getContext('2d'), {
+    type:'line',
+    data:{ datasets:[
+      { label:'Preço pago (compra)', data: compras, borderColor:'#7b61ff', backgroundColor:'rgba(123,97,255,0.15)', tension:0.2, pointRadius:4, borderWidth:2 },
+      { label:'Preço cotado', data: cotacoes, borderColor:'#ffb703', backgroundColor:'rgba(255,183,3,0.1)', borderDash:[5,4], tension:0.2, pointRadius:4, borderWidth:2 }
+    ]},
+    options:{ responsive:true, maintainAspectRatio:false,
+      plugins:{ legend:{labels:{color:'#8b949e',font:{size:11}}},
+        tooltip:{callbacks:{
+          title: ctx => new Date(ctx[0].parsed.x).toLocaleDateString('pt-BR'),
+          label: ctx => ` ${ctx.dataset.label}: ${fmtBRL(ctx.parsed.y)}`
+        }} },
+      scales:{ x:{ type:'linear', grid:{color:'rgba(42,51,68,0.6)'},
+                   ticks:{color:'#8b949e',font:{size:10}, callback:v=>new Date(v).toLocaleDateString('pt-BR')} },
+               y:{ grid:{color:'rgba(42,51,68,0.6)'}, ticks:{color:'#8b949e',font:{size:10},callback:v=>'R$'+v.toLocaleString('pt-BR')} } }
+    }
+  });
+}
+function exportarTabela() {
+  const selSubs = [...msState.substSubs.selected];
+  const selEans = [...msState.eanSearch.selected];
+  const selProds = [...msState.prodSearch.selected];
+  const selApresBusca = [...msState.apresSearch.selected];
+  if (!selSubs.length && !selEans.length && !selProds.length && !selApresBusca.length) {
+    showToast('Selecione ao menos um filtro primeiro', 'error'); return;
+  }
+  let rows = selSubs.length ? selSubs.flatMap(s => substanceMap[s] || []) : allRecords;
+  if (selEans.length) rows = rows.filter(r => selEans.includes(r.EAN1));
+  if (selProds.length) rows = rows.filter(r => selProds.includes(r.PRODUTO));
+  if (selApresBusca.length) rows = rows.filter(r => selApresBusca.includes(r.APRESENTACAO));
+  let filtered = currentTipo ? rows.filter(r=>r.TIPO_PRODUTO===currentTipo) : rows;
+  if (currentApres.size>0) filtered = filtered.filter(r=>currentApres.has(r.APRESENTACAO));
+  const ws = XLSX.utils.json_to_sheet(filtered.map(r=>({
+    ID_ITEM: r.ID_ITEM,
+    Substância: r.SUBSTANCIA,
+    Laboratório: r.LABORATORIO,
+    EAN: r.EAN1,
+    Produto: r.PRODUTO,
+    Apresentação: r.APRESENTACAO,
+    'Tipo Produto': r.TIPO_PRODUTO,
+    'Regime Preço': r.REGIME_PRECO,
+    'Preço (R$)': formatPrice(r.PRECO),
+    QTD: formatPrice(r.QTD),
+    'Última Compra': fmtData(r.ULTIMA_COMPRA),
+    'Último Preço Pago': formatPrice(r.ULTIMO_PRECO_PAGO),
+    'Menor Preço Histórico': formatPrice(r.MENOR_PRECO_HISTORICO),
+    'Maior Preço Histórico': formatPrice(r.MAIOR_PRECO_HISTORICO),
+    'Preço Médio Histórico': formatPrice(r.PRECO_MEDIO_HISTORICO),
+    'Última Cotação': formatPrice(r.ULTIMA_COTACAO),
+    'Melhor Cotação Atual (R$)': r._melhorCotacao,
+    'Economia Potencial (R$)': formatPrice(r.ECONOMIA_POTENCIAL),
+    'Diferença (%)': r._diffPct !== null && r._diffPct !== undefined ? Number(r._diffPct.toFixed(2)) : null,
+    'Status Preço': r.STATUS_PRECO,
+    'Status de Compra': ({verde:'Comprar',amarelo:'Atenção',vermelho:'Não Comprar',cinza:'Sem dados'})[r._statusCompra] || 'Sem dados',
+    'Recomendação': getRecomendacao(r)
+  })));
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, 'Comparação');
+  const labelParts = [...selSubs, ...selProds, ...selEans].slice(0,2).join('_').slice(0,30) || 'busca';
+  XLSX.writeFile(wb, `comparacao_${labelParts}.xlsx`);
+  showToast('✅ Exportado com sucesso', 'success');
+}
+
+function exportarTabelaLab() {
+  const selLabs = [...msState.labLabs.selected];
+  if (!selLabs.length) { showToast('Selecione um laboratório primeiro', 'error'); return; }
+  const ws = XLSX.utils.json_to_sheet(labTableData.map(r=>({
+    ID_ITEM: r.ID_ITEM,
+    Substância: r.SUBSTANCIA,
+    Laboratório: r.LABORATORIO,
+    EAN: r.EAN1,
+    Produto: r.PRODUTO,
+    Apresentação: r.APRESENTACAO,
+    'Tipo Produto': r.TIPO_PRODUTO,
+    'Regime Preço': r.REGIME_PRECO,
+    'Preço (R$)': formatPrice(r.PRECO)
+  })));
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, 'Laboratório');
+  XLSX.writeFile(wb, `lab_${[...msState.labLabs.selected].slice(0,2).join('_').slice(0,30)}.xlsx`);
+  showToast('✅ Exportado com sucesso', 'success');
+}
+
+function exportarComparador() {
+  const subs = [...msState.compSubs.selected];
+  const labs = [...msState.compLabs.selected];
+  const apres = [...msState.compApres.selected];
+  if (!subs.length && !labs.length) { showToast('Configure o comparador primeiro', 'error'); return; }
+  let rows = allRecords.filter(r =>
+    (subs.length===0||subs.includes(r.SUBSTANCIA)) &&
+    (labs.length===0||labs.includes(r.LABORATORIO)) &&
+    (apres.length===0||apres.includes(r.APRESENTACAO))
+  );
+  const ws = XLSX.utils.json_to_sheet(rows.map(r=>({
+    Substância: r.SUBSTANCIA,
+    Laboratório: r.LABORATORIO,
+    Produto: r.PRODUTO,
+    Apresentação: r.APRESENTACAO,
+    'Tipo Produto': r.TIPO_PRODUTO,
+    'Preço (R$)': formatPrice(r.PRECO)
+  })));
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, 'Comparador');
+  XLSX.writeFile(wb, 'comparador_avancado.xlsx');
+  showToast('✅ Exportado com sucesso', 'success');
+}
+</script>
+</body>
+</html>
