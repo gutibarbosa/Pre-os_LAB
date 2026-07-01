@@ -1952,7 +1952,12 @@ function renderComprasTabela(rows) {
       <td style="font-size:12px;max-width:170px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${r.SUBSTANCIA}</td>
       <td class="td-produto">${r.PRODUTO}</td>
       <td class="td-apres">${r.APRESENTACAO}</td>
-      <td style="font-size:12px;max-width:150px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${r._isUltimoComprador?'Última compra efetiva deste grupo (substância + apresentação)':''}">${r.LABORATORIO}${r._isUltimoComprador?' <span style="font-size:11px" title="Última compra efetiva deste grupo">🏆</span>':''}</td>
+      <td style="max-width:150px" ${r._isUltimoComprador?'title="Última compra efetiva deste grupo (substância + apresentação)"':''}>
+        <div style="display:flex;align-items:center;gap:4px;overflow:hidden">
+          ${r._isUltimoComprador?'<span style="font-size:11px;flex-shrink:0">🏆</span>':''}
+          <span style="font-size:12px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${r.LABORATORIO}</span>
+        </div>
+      </td>
       <td class="td-price">${r._ultimoPago!==null?fmtBRL(r._ultimoPago):'—'}</td>
       <td class="td-price">${r._melhorCotacao!==null?fmtBRL(r._melhorCotacao):'—'}</td>
       <td class="td-price ${r.ECONOMIA_POTENCIAL>0?'price-min':''}" style="text-align:right">${fmtBRL(r.ECONOMIA_POTENCIAL||0)}</td>
