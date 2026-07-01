@@ -590,8 +590,6 @@
                 <th onclick="sortCompras('_diffPct')" id="thc-_diffPct" style="text-align:right">Diferença % <span class="sort-arrow">↕</span></th>
                 <th>Status de Compra</th>
                 <th>Recomendação</th>
-                <th>Último Comprador</th>
-                <th onclick="sortCompras('_diffVsUltimoComprador')" id="thc-_diffVsUltimoComprador" style="text-align:right">Dif. vs Último Comprador <span class="sort-arrow">↕</span></th>
               </tr>
             </thead>
             <tbody id="comprasTableBody"></tbody>
@@ -1938,7 +1936,7 @@ function renderComprasTabela(rows) {
   const LIMIT = 400;
   const body = document.getElementById('comprasTableBody');
   if (!sorted.length) {
-    body.innerHTML = `<tr><td colspan="12" style="text-align:center;color:var(--muted);padding:24px">Nenhum item encontrado para os filtros selecionados.</td></tr>`;
+    body.innerHTML = `<tr><td colspan="10" style="text-align:center;color:var(--muted);padding:24px">Nenhum item encontrado para os filtros selecionados.</td></tr>`;
     return;
   }
   body.innerHTML = sorted.slice(0, LIMIT).map(r => `
@@ -1953,8 +1951,6 @@ function renderComprasTabela(rows) {
       <td style="text-align:right">${r._diffPct!==null?r._diffPct.toFixed(1)+'%':'—'}</td>
       <td>${statusCompraBadge(r._statusCompra)}</td>
       <td style="font-size:11px;color:var(--muted);max-width:230px">${getRecomendacao(r)}</td>
-      <td>${ultimoCompradorCell(r)}</td>
-      <td style="text-align:right">${diffVsUltimoCompradorCell(r)}</td>
     </tr>`).join('');
   if (sorted.length > LIMIT) showToast(`ℹ️ Exibindo os ${LIMIT} primeiros itens de ${sorted.length} — use os filtros ou exporte para ver todos`);
 }
