@@ -557,6 +557,7 @@
           <div class="opp-title" id="oppProduto">—</div>
           <div class="opp-sub" id="oppDetalhe">—</div>
           <div class="opp-sub">Melhor opção agora: <strong id="oppLab">—</strong></div>
+          <div class="opp-sub" id="oppUltimoCompradorLinha" style="display:none">🕘 Última compra efetiva: <strong id="oppUltimoCompradorTxt">—</strong></div>
         </div>
         <div class="opp-stats">
           <div class="opp-stat"><div class="opp-stat-label">Último Pago</div><div class="opp-stat-value" id="oppUltimo">—</div></div>
@@ -1901,6 +1902,14 @@ function renderMelhorOportunidade(rows) {
     ? `${best.LABORATORIO} — preço caiu no próprio fornecedor`
     : `${best._melhorProduto || '—'} — ${best._melhorLab || '—'}`;
   document.getElementById('oppLab').textContent = labTxt;
+  const oppUltLinha = document.getElementById('oppUltimoCompradorLinha');
+  if (best._ultimoCompradorLab) {
+    const dataStr = best._ultimoCompradorData ? best._ultimoCompradorData.toLocaleDateString('pt-BR') : '—';
+    document.getElementById('oppUltimoCompradorTxt').textContent = `${best._ultimoCompradorLab} · ${dataStr} · ${fmtBRL(best._ultimoCompradorPreco)}`;
+    oppUltLinha.style.display = '';
+  } else {
+    oppUltLinha.style.display = 'none';
+  }
   document.getElementById('oppUltimo').textContent = fmtBRL(best._ultimoPago);
   document.getElementById('oppMelhor').textContent = fmtBRL(best._melhorCotacao);
   document.getElementById('oppEconomiaRS').textContent = fmtBRL(best.ECONOMIA_POTENCIAL);
